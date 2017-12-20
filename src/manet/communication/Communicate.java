@@ -10,9 +10,14 @@ import peersim.edsim.EDSimulator;
 public class Communicate implements Emitter {
 
 	private static final String PAR_POSITIONPID = "positionprotocol";
-
+	private static final String PAR_LATENCY = "latency";
+	private static final String PAR_SCOPE = "scope";
+	
+	
 	private final int position_pid;
-
+	private final int latency;
+	private final int scope;
+	
 	private PositionProtocol hostPos = null;
 	private PositionProtocol destPos = null;
 	private double currX = 0;
@@ -23,6 +28,8 @@ public class Communicate implements Emitter {
 
 	public Communicate(String prefix) {
 		position_pid = Configuration.getPid(prefix + "." + PAR_POSITIONPID);
+		latency = Configuration.getInt(prefix + "." + PAR_LATENCY);
+		scope = Configuration.getInt(prefix + "." + PAR_SCOPE);
 	}
 
 	@Override
@@ -40,7 +47,7 @@ public class Communicate implements Emitter {
 						hostPos = (PositionProtocol) host.getProtocol(position_pid);
 						destPos = (PositionProtocol) n.getProtocol(position_pid);
 						System.out.println("sending");
-						EDSimulator.add(this.getLatency(), msg, n, position_pid); // Send()
+						EDSimulator.add(this.latency, msg, n, position_pid); // Send()
 					}
 				}
 			}
@@ -49,12 +56,14 @@ public class Communicate implements Emitter {
 
 	@Override
 	public int getLatency() {
-		return this.getLatency();
+		//return this.getLatency();
+		return this.latency;
 	}
 
 	@Override
 	public int getScope() {
-		return this.getScope();
+		//return this.getScope();
+		return this.scope;
 	}
 
 	public Communicate clone() {
