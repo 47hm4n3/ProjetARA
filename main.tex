@@ -145,25 +145,23 @@ La stratégie 2 ne fait que restituer la position actuelle du nœud comme nouvel
 \noindent\begin{minipage}{\textwidth}
 \begin{shaded}
 \begin{lstlisting}
+@Override
 public void emit(Node host, Message msg) {
-		for (int i = 0; i < Network.getCapacity(); i++) {
-			n = Network.get(i);
-			if (host.getID() != n.getID()) { // Not me
-				if (msg.getIdDest() == n.getID()) { // I am the recipient of the received message
-					currX = hostPos.getCurrentPosition().getX();
-					currY = hostPos.getCurrentPosition().getY();
-					destX = destPos.getCurrentPosition().getX();
-					destY = destPos.getCurrentPosition().getY();
-					if (!((Math.pow(destX - currX,2) + Math.pow(destY - currY,2)) > Math.pow(this.getScope(), 2))) { // Recipient is in my scope
-						hostPos = (PositionProtocol) host.getProtocol(position_pid);
-						destPos = (PositionProtocol) n.getProtocol(position_pid);
-						System.out.println("sending");
-						EDSimulator.add(this.getLatency(), msg, n, position_pid); // Send()
-					}
+	for (int i = 0; i < Network.getCapacity(); i++) { // For all network
+															// nodes
+		node = Network.get(i);
+		if (host.getID() != node.getID()) { // Except me
+			if (host.getID() == msg.getIdDest()) { // I am the recipient of
+														// the received message
+				hostPos = (PositionProtocol) host.getProtocol(position_pid);
+				nodePos = (PositionProtocol) node.getProtocol(position_pid);
+				if ((hostPos.getCurrentPosition().distance(nodePos.getCurrentPosition()) <= this.getScope())) {
+					EDSimulator.add(this.getLatency(), msg, node, position_pid); // Send()
 				}
 			}
 		}
 	}
+}
 \end{lstlisting}
 \end{shaded}
 \end{minipage}
