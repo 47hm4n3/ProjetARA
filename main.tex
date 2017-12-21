@@ -1,0 +1,341 @@
+\documentclass[10pt]{report}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% DEBUT DU PREAMBULE %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\title{Rapport Devoir ARA}															%%%
+\usepackage[francais]{babel}														%%%
+\usepackage[T1]{fontenc}															%%%
+\usepackage[utf8]{inputenc}															%%%
+\usepackage{fancyhdr}																%%%
+\usepackage{lastpage}																%%%
+\usepackage{graphicx, wrapfig, subcaption, setspace, booktabs}						%%%
+\usepackage[T1]{fontenc}															%%%
+\usepackage[font=small, labelfont=bf]{caption}										%%%
+\usepackage{fourier}																%%%
+\usepackage[protrusion=true, expansion=true]{microtype}								%%%
+\usepackage{sectsty}																%%%
+\usepackage{url}																	%%%
+\usepackage[colorlinks=true, urlcolor=blue, linkcolor=black]{hyperref}				%%%
+\usepackage[margin=1in]{geometry}													%%%
+\renewcommand\thesection{\arabic{section}}											%%%
+\newcommand{\HRule}[1]{\rule{\linewidth}{#1}}										%%%
+\onehalfspacing																		%%%
+\setcounter{tocdepth}{5}															%%%
+\setcounter{secnumdepth}{5}															%%%
+\usepackage[]{array}                                                                %%%
+\usepackage{mathtools}																%%%
+\usepackage{underscore}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% FIN DU PREAMBULE %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%--------
+\usepackage[pdftex]{xcolor}
+\usepackage{listings}
+\usepackage{framed}
+\usepackage{adjustbox}
+
+\definecolor{javared}{rgb}{0.6,0,0} % for strings
+\definecolor{javagreen}{rgb}{0.25,0.5,0.35} % comments
+\definecolor{javapurple}{rgb}{0.5,0,0.35} % keywords
+\definecolor{javadocblue}{rgb}{0.25,0.35,0.75} % javadoc
+\definecolor{shadecolor}{rgb}{.94,.97,1}
+\lstset{language=Java,
+basicstyle=\ttfamily,
+keywordstyle=\color{javapurple}\bfseries,
+stringstyle=\color{javared},
+commentstyle=\color{javagreen},
+morecomment=[s][\color{javadocblue}]{/**}{*/},
+numbers=left,
+numberstyle=\color{black},
+stepnumber=1,
+numbersep=8pt,
+tabsize=2,
+showspaces=false,
+showstringspaces=false,
+columns=fullflexible,
+frame = single,
+breaklines=true,
+postbreak=\mbox{\textcolor{red}{$\hookrightarrow$}\space}
+}
+
+
+%--------
+
+
+%-------------------------------------------------------------------------------
+% HEADER & FOOTER
+%-------------------------------------------------------------------------------
+\pagestyle{fancy}
+\fancyhf{}
+\setlength\headheight{15pt}
+\fancyhead[L]{BENTAHAR \& AINAS}
+\fancyhead[R]{UPMC}
+\fancyfoot[R]{Page \thepage\ / \pageref{LastPage}}
+%-------------------------------------------------------------------------------
+% TITLE PAGE
+%-------------------------------------------------------------------------------
+
+\begin{document}
+
+\title{ \normalsize \textsc{\LARGE {Systèmes et Applications Répartis}\\\Large{Algorithmique Répartie Avancée}}
+		\\ [2.0cm]
+		\HRule{0.5pt} \\
+		\LARGE \textbf{\uppercase{Devoir ARA 2017-2018\\MANET}}
+		\HRule{2pt} \\ [0.5cm]
+		\normalsize \vspace*{3\baselineskip}}
+
+\author{
+		Athmane BENTAHAR (3410322)\\Tacfarinas AINAS (3001048)}
+
+\maketitle
+\tableofcontents
+\newpage
+%-------------------------------------------------------------------------------
+% Section title formatting
+%-------------------------------------------------------------------------------
+\sectionfont{\scshape}
+%-------------------------------------------------------------------------------
+% BODY
+%-------------------------------------------------------------------------------
+\section{Introduction}
+\section{Exercice 1  Implémentation d'un MANET dans PeerSim}
+\subsection{Question 1}
+\subsection{Question 2}
+Voici le contenu du fichier de configuration à ce point du projet :
+\newline
+\newline
+\noindent\begin{minipage}{\textwidth}
+\begin{framed}
+\begin{shaded}
+random.seed 5\\
+network.size 3\\
+simulation.endtime 100000\\
+debug.config all\\
+\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\# protocols\\
+protocol.pos manet.positioning.PositionProtocolImpl\\
+protocol.pos.maxspeed 100\\
+protocol.pos.minspeed 50\\
+protocol.pos.width 1000\\
+protocol.pos.height 1000\\
+protocol.pos.pause 10\\
+\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\# initialization\\
+\# initializer\\
+init.initial manet.positioning.Initialize\\
+init.initial.positionprotocol pos\\
+\# strategies\\
+initial\_position\_strategy manet.positioning.strategies.Strategy1InitNext\\
+initial\_position\_strategy.positionprotocol pos\\
+next\_destination\_strategy manet.positioning.strategies.Strategy1InitNext\\
+next\_destination\_strategy.positionprotocol pos\\
+\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\# control\\
+control.graph manet.GraphicalMonitor\\
+control.graph.positionprotocol pos\\
+control.graph.step 2\\
+control.graph.time\_slow 0.0002
+\end{shaded}
+\end{framed}
+\end{minipage}
+
+\subsection{Question 3}
+La stratégie 1 fait mouvoir les nœuds du réseau dans l'espace compris entre [0,maxX] et [0,maxY], en générant une nouvelle position (aléatoire) aux nœuds à chaque appel.
+
+\subsection{Question 4}
+La stratégie 2 ne fait que restituer la position actuelle du nœud comme nouvelle position. Ce qui mène à une immobilité des nœuds.
+
+\subsection{Question 5}
+
+\noindent\begin{minipage}{\textwidth}
+\begin{shaded}
+\begin{lstlisting}
+public void emit(Node host, Message msg) {
+		for (int i = 0; i < Network.getCapacity(); i++) {
+			n = Network.get(i);
+			if (host.getID() != n.getID()) { // Not me
+				if (msg.getIdDest() == n.getID()) { // I am the recipient of the received message
+					currX = hostPos.getCurrentPosition().getX();
+					currY = hostPos.getCurrentPosition().getY();
+					destX = destPos.getCurrentPosition().getX();
+					destY = destPos.getCurrentPosition().getY();
+					if (!((Math.pow(destX - currX,2) + Math.pow(destY - currY,2)) > Math.pow(this.getScope(), 2))) { // Recipient is in my scope
+						hostPos = (PositionProtocol) host.getProtocol(position_pid);
+						destPos = (PositionProtocol) n.getProtocol(position_pid);
+						System.out.println("sending");
+						EDSimulator.add(this.getLatency(), msg, n, position_pid); // Send()
+					}
+				}
+			}
+		}
+	}
+\end{lstlisting}
+\end{shaded}
+\end{minipage}
+
+
+
+\subsection{Question 6}
+\subsection{Question 7}
+\subsection{Question 8}
+\subsection{Question 9}
+\subsection{Question 10}
+Le tableau complété :\\
+
+\begin{center}
+\begin{tabular}{|l|l|l|l|l|l|}
+  \hline
+  Portée & SPI & SD & D($t_{end}$) & $\frac{E(t_{end})}{D(t_{end})}$ & $\frac{ED(t_{end})}{D(t_{end})}$\\
+  \hline
+	125 & 1 & 1 & 0 & 0 & 0\\
+  \hline
+	250 & 1 & 1 & 0 & 0 & 0\\
+  \hline
+	375 & 1 & 1 & 0 & 0 & 0\\
+  \hline
+	500 & 1 & 1 & 0 & 0 & 0\\
+  \hline
+	625 & 1 & 1 & 0 & 0 & 0\\
+  \hline
+	750 & 1 & 1 & 0 & 0 & 0\\
+  \hline
+	875 & 1 & 1 & 0 & 0 & 0\\
+  \hline
+	1000 & 1 & 1 & 0 & 0 & 0\\
+  \hline
+	125 & 3 & 3 & 0 & 0 & 0\\
+  \hline
+	250 & 3 & 3 & 0 & 0 & 0\\
+  \hline
+	375 & 3 & 3 & 0 & 0 & 0\\
+  \hline
+	500 & 3 & 3 & 0 & 0 & 0\\
+  \hline
+	625 & 3 & 3 & 0 & 0 & 0\\
+  \hline
+	750 & 3 & 3 & 0 & 0 & 0\\
+  \hline
+	875 & 3 & 3 & 0 & 0 & 0\\
+  \hline
+	1000 & 3 & 3 & 0 & 0 & 0\\
+  \hline
+\end{tabular}
+\end{center}
+
+
+\subsection{Question 11}
+\newpage
+\section{Exercice 2  Étude de protocoles de diffusion}
+\subsection{Question 1}
+Le tableau complété :\\
+
+\begin{center}
+\begin{tabular}{|l|l|l|}
+  \hline
+  Taille réseau & D($t_{end}$) & $\frac{ED(t_{end})}{D(t_{end})}$\\
+  \hline
+	20 & 0 & 0\\
+  \hline
+  	30 & 0 & 0\\
+  \hline
+  	40 & 0 & 0\\
+  \hline
+  	50 & 0 & 0\\
+  \hline
+  	60 & 0 & 0\\
+  \hline
+  	70 & 0 & 0\\
+  \hline
+        80 & 0 & 0\\
+  \hline
+  	90 & 0 & 0\\
+  \hline
+  	100 & 0 & 0\\
+  \hline
+  	120 & 0 & 0\\
+  \hline
+  	140 & 0 & 0\\
+  \hline
+  	160 & 0 & 0\\
+  \hline
+  	180 & 0 & 0\\
+  \hline
+  	200 & 0 & 0\\
+  \hline
+\end{tabular}
+\end{center}
+
+\subsection{Question 2}
+\subsection{Question 3}
+\subsection{Question 4}
+\subsection{Question 5}
+\subsection{Question 6}
+\subsection{Question 7}
+\subsection{Question 8}
+\subsection{Question 9}
+%-------------------------------------------------------------------------------
+% REFERENCES
+%-------------------------------------------------------------------------------
+\newpage
+\section*{Références}
+\href{https://pages.lip6.fr/Jonathan.Lejeune/}{Jonathan Lejeune}, Devoir ARA, \textit{MANET.} \href{https://pages.lip6.fr/Jonathan.Lejeune/documents/enseignements/ARA/sujet\_devoir\_2017\_2018.pdf}{Énoncé}, Décembre 2017.
+\newline
+\newline
+\end{document}
+%-------------------------------------------------------------------------------
+% SNIPPETS
+%-------------------------------------------------------------------------------
+
+%\begin{figure}[!ht]
+%	\centering
+%	\includegraphics[width=0.8\textwidth]{file_name}
+%	\caption{}
+%	\centering
+%	\label{label:file_name}
+%\end{figure}
+
+%\begin{figure}[!ht]
+%	\centering
+%	\includegraphics[width=0.8\textwidth]{graph}
+%	\caption{Blood pressure ranges and associated level of hypertension (American Heart Association, 2013).}
+%	\centering
+%	\label{label:graph}
+%\end{figure}
+
+%\begin{wrapfigure}{r}{0.30\textwidth}
+%	\vspace{-40pt}
+%	\begin{center}
+%		\includegraphics[width=0.29\textwidth]{file_name}
+%	\end{center}
+%	\vspace{-20pt}
+%	\caption{}
+%	\label{label:file_name}
+%\end{wrapfigure}
+
+%\begin{wrapfigure}{r}{0.45\textwidth}
+%	\begin{center}
+%		\includegraphics[width=0.29\textwidth]{manometer}
+%	\end{center}
+%	\caption{Aneroid sphygmomanometer with stethoscope (Medicalexpo, 2012).}
+%	\label{label:manometer}
+%\end{wrapfigure}
+
+%\begin{table}[!ht]\footnotesize
+%	\centering
+%	\begin{tabular}{cccccc}
+%	\toprule
+%	\multicolumn{2}{c} {Pearson's correlation test} & \multicolumn{4}{c} {Independent t-test} \\
+%	\midrule	
+%	\multicolumn{2}{c} {Gender} & \multicolumn{2}{c} {Activity level} & \multicolumn{2}{c} {Gender} \\
+%	\midrule
+%	Males & Females & 1st level & 6th level & Males & Females \\
+%	\midrule
+%	\multicolumn{2}{c} {BMI vs. SP} & \multicolumn{2}{c} {Systolic pressure} & \multicolumn{2}{c} {Systolic Pressure} \\
+%	\multicolumn{2}{c} {BMI vs. DP} & \multicolumn{2}{c} {Diastolic pressure} & \multicolumn{2}{c} {Diastolic pressure} \\
+%	\multicolumn{2}{c} {BMI vs. MAP} & \multicolumn{2}{c} {MAP} & \multicolumn{2}{c} {MAP} \\
+%	\multicolumn{2}{c} {W:H ratio vs. SP} & \multicolumn{2}{c} {BMI} & \multicolumn{2}{c} {BMI} \\
+%	\multicolumn{2}{c} {W:H ratio vs. DP} & \multicolumn{2}{c} {W:H ratio} & \multicolumn{2}{c} {W:H ratio} \\
+%	\multicolumn{2}{c} {W:H ratio vs. MAP} & \multicolumn{2}{c} {\% Body fat} & \multicolumn{2}{c} {\% Body fat} \\
+%	\multicolumn{2}{c} {} & \multicolumn{2}{c} {Height} & \multicolumn{2}{c} {Height} \\
+%	\multicolumn{2}{c} {} & \multicolumn{2}{c} {Weight} & \multicolumn{2}{c} {Weight} \\
+%	\multicolumn{2}{c} {} & \multicolumn{2}{c} {Heart rate} & \multicolumn{2}{c} {Heart rate} \\
+%	\bottomrule
+%	\end{tabular}
+%	\caption{Parameters that were analysed and related statistical test performed for current study. BMI - body mass index; SP - systolic pressure; DP - diastolic pressure; MAP - mean arterial pressure; W:H ratio - waist to hip ratio.}
+%	\label{label:tests}
+%\end{table}
