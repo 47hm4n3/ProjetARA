@@ -19,11 +19,7 @@ public class EmitterImpl implements Emitter {
 	private final int scope;
 	
 	private PositionProtocol hostPos = null;
-	private PositionProtocol destPos = null;
-	private double currX = 0;
-	private double currY = 0;
-	private double destX = 0;
-	private double destY = 0;
+	private PositionProtocol nodePos = null;
 	private Node node = null;
 
 	public EmitterImpl(String prefix) {
@@ -39,13 +35,9 @@ public class EmitterImpl implements Emitter {
 			node = Network.get(i);
 			if (host.getID() != node.getID()) { // Except me
 				if (host.getID() == msg.getIdDest()) { // I am the recipient of the received message
-					currX = hostPos.getCurrentPosition().getX();
-					currY = hostPos.getCurrentPosition().getY();
-					destX = destPos.getCurrentPosition().getX();
-					destY = destPos.getCurrentPosition().getY();
-					if (!((Math.pow(destX - currX,2) + Math.pow(destY - currY,2)) > Math.pow(this.getScope(), 2))) { // Recipient is in my scope
-						hostPos = (PositionProtocol) host.getProtocol(position_pid);
-						destPos = (PositionProtocol) node.getProtocol(position_pid);
+					hostPos = (PositionProtocol) host.getProtocol(position_pid);
+					nodePos = (PositionProtocol) node.getProtocol(position_pid);
+					if ((hostPos.getCurrentPosition().distance(nodePos.getCurrentPosition()) <= this.getScope())) {
 						System.out.println("sending");
 						EDSimulator.add(this.getLatency(), msg, node, position_pid); // Send()
 					}
@@ -70,9 +62,8 @@ public class EmitterImpl implements Emitter {
 		try {
 			return (EmitterImpl) super.clone();
 		} catch (CloneNotSupportedException e) {
-			System.out.println("Cloning Communicate Failed !");
+			System.out.println("Cloning EmitterImpl Failed !");
 		}
 		return null;
 	}
-
 }

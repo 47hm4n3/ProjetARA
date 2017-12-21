@@ -11,8 +11,8 @@ public class Initialize implements Control {
 	private static final String PAR_POSITIONPID = "positionprotocol";
 
 	private final int position_pid;
-	private Node n = null;
-	private PositionProtocol p = null;
+	private Node node = null;
+	private PositionProtocol pos = null;
 
 	public Initialize(String prefix) {
 		position_pid = Configuration.getPid(prefix + "." + PAR_POSITIONPID);
@@ -21,10 +21,10 @@ public class Initialize implements Control {
 	@Override
 	public boolean execute() {
 		for (int i = 0; i < Network.size(); i++) {
-			n = Network.get(i);
-			p = (PositionProtocol) n.getProtocol(position_pid);
-			p.initialiseCurrentPosition(Network.get(i));
-			EDSimulator.add(1, PositionProtocolImpl.loop_event, n, position_pid);
+			node = Network.get(i);
+			pos = (PositionProtocol) node.getProtocol(position_pid);
+			pos.initialiseCurrentPosition(Network.get(i));
+			EDSimulator.add(1, PositionProtocolImpl.loop_event, node, position_pid);
 		}
 		return false;
 	}
