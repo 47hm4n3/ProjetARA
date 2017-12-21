@@ -7,7 +7,7 @@ import peersim.core.Network;
 import peersim.core.Node;
 import peersim.edsim.EDSimulator;
 
-public class Communicate implements Emitter {
+public class EmitterImpl implements Emitter {
 
 	private static final String PAR_POSITIONPID = "positionprotocol";
 	private static final String PAR_LATENCY = "latency";
@@ -24,9 +24,9 @@ public class Communicate implements Emitter {
 	private double currY = 0;
 	private double destX = 0;
 	private double destY = 0;
-	private Node n = null;
+	private Node node = null;
 
-	public Communicate(String prefix) {
+	public EmitterImpl(String prefix) {
 		position_pid = Configuration.getPid(prefix + "." + PAR_POSITIONPID);
 		latency = Configuration.getInt(prefix + "." + PAR_LATENCY);
 		scope = Configuration.getInt(prefix + "." + PAR_SCOPE);
@@ -35,19 +35,19 @@ public class Communicate implements Emitter {
 	@Override
 	public void emit(Node host, Message msg) {
 
-		for (int i = 0; i < Network.getCapacity(); i++) {
-			n = Network.get(i);
-			if (host.getID() != n.getID()) { // Not me
-				if (msg.getIdDest() == n.getID()) { // I am the recipient of the received message
+		for (int i = 0; i < Network.getCapacity(); i++) { // For all network nodes
+			node = Network.get(i);
+			if (host.getID() != node.getID()) { // Except me
+				if (host.getID() == msg.getIdDest()) { // I am the recipient of the received message
 					currX = hostPos.getCurrentPosition().getX();
 					currY = hostPos.getCurrentPosition().getY();
 					destX = destPos.getCurrentPosition().getX();
 					destY = destPos.getCurrentPosition().getY();
 					if (!((Math.pow(destX - currX,2) + Math.pow(destY - currY,2)) > Math.pow(this.getScope(), 2))) { // Recipient is in my scope
 						hostPos = (PositionProtocol) host.getProtocol(position_pid);
-						destPos = (PositionProtocol) n.getProtocol(position_pid);
+						destPos = (PositionProtocol) node.getProtocol(position_pid);
 						System.out.println("sending");
-						EDSimulator.add(this.latency, msg, n, position_pid); // Send()
+						EDSimulator.add(this.getLatency(), msg, node, position_pid); // Send()
 					}
 				}
 			}
@@ -66,9 +66,9 @@ public class Communicate implements Emitter {
 		return this.scope;
 	}
 
-	public Communicate clone() {
+	public EmitterImpl clone() {
 		try {
-			return (Communicate) super.clone();
+			return (EmitterImpl) super.clone();
 		} catch (CloneNotSupportedException e) {
 			System.out.println("Cloning Communicate Failed !");
 		}
