@@ -10,7 +10,6 @@
 \usepackage{graphicx, wrapfig, subcaption, setspace, booktabs}						%%%
 \usepackage[T1]{fontenc}															%%%
 \usepackage[font=small, labelfont=bf]{caption}										%%%
-\usepackage{fourier}																%%%
 \usepackage[protrusion=true, expansion=true]{microtype}								%%%
 \usepackage{sectsty}																%%%
 \usepackage{url}																	%%%
@@ -68,7 +67,7 @@ postbreak=\mbox{\textcolor{red}{$\hookrightarrow$}\space}
 \setlength\headheight{15pt}
 \fancyhead[L]{BENTAHAR \& AINAS}
 \fancyhead[R]{UPMC}
-\fancyfoot[R]{Page \thepage\ / \pageref{LastPage}}
+%\fancyfoot[R]{Page \thepage\ / \pageref{LastPage}}
 %-------------------------------------------------------------------------------
 % TITLE PAGE
 %-------------------------------------------------------------------------------
@@ -98,6 +97,14 @@ postbreak=\mbox{\textcolor{red}{$\hookrightarrow$}\space}
 \section{Introduction}
 \section{Exercice 1  Implémentation d'un MANET dans PeerSim}
 \subsection{Question 1}
+Initialement, un objet de la classe doit avoir \\
+-une vitesse (entre min et max) qu'il peut avoir quand il est en mouvement, \\
+-un temps lorsqu'il est en pause, \\
+-et avoir connaissance de la longueur et largeur de la frame dans laquelle les nœuds pourront agir. \\
+Il doit aussi avoir des stratégies de positions qui vont permettre au noeuds de savoir, initialement et dans l'exécution, les positions qu'ils auront. \\
+Déplacement du noeud : \\
+1) Lorsque le noeud n'est pas en mouvement, c'est à dire initialement où lorsqu'il est en pause, on calcule une vitesse alétoire entre min et max, puis on calcule la position destination selon la vitesse calculée et la stratégie NextDestination adoptée. \\
+2) Si on a pas atteint la destination, on avance vers elle en ligne droite jusqu'à l'atteindre, puis on se met en pause et on réitère 1) \\
 \subsection{Question 2}
 Voici le contenu du fichier de configuration à ce point du projet :
 \newline
@@ -169,6 +176,105 @@ public void emit(Node host, Message msg) {
 
 
 \subsection{Question 6}
+
+\noindent\begin{minipage}{\textwidth}
+\begin{shaded}
+\begin{lstlisting}
+public class DetecterVoisinsQ6 implements NeighborProtocol, EDProtocol {
+
+	public static final String addNeighbor_event = "ADDNEIGHBOREVENT";
+	public static final String timer_event = "timer";
+
+	private static final String PAR_PROBE = "probe";
+	private static final String PAR_TIMER = "timer";
+	private static final String PAR_EMITER = "emiter";
+
+	private final int probe;
+	private final int timer;
+	private final int emiter;
+	private final int my_pid;
+
+	private Map<Long, Boolean> T = new HashMap<Long, Boolean>();
+	private List<Long> Neighbors = new ArrayList<Long>();
+
+	public DetecterVoisinsQ6(String prefix) {
+		String tmp[] = prefix.split("\\.");
+		my_pid = Configuration.lookupPid(tmp[tmp.length - 1]);
+		// heartbeat=Configuration.getInt(prefix+"."+PAR_HEARTBEAT);
+		probe = Configuration.getInt(prefix + "." + PAR_PROBE);
+		timer = Configuration.getInt(prefix + "." + PAR_TIMER);
+		emiter = Configuration.getPid(prefix + "." + PAR_EMITER);
+
+	}
+
+	public Object clone() {
+		DetecterVoisinsQ6 v = null;
+		try {
+			v = (DetecterVoisinsQ6) super.clone();
+			Neighbors = new ArrayList<Long>();
+			T = new HashMap<Long, Boolean>();
+		} catch (CloneNotSupportedException e) {
+		}
+		return v;
+	}
+
+	@Override
+	public List<Long> getNeighbors() {
+		return Neighbors;
+	}
+
+	private void addNeighbor(Long n) {
+		if (!Neighbors.contains(n)) {
+			Neighbors.add(n);
+		}
+	}
+
+	private void removeNeighbor(Long n) {
+		if (Neighbors.contains(n)) {
+			Neighbors.remove(n);
+		}
+	}
+
+	@Override
+	public void processEvent(Node node, int pid, Object event) {
+		if (pid != my_pid) {
+			throw new RuntimeException("Receive Event for wrong protocol");
+		}
+		if (event instanceof String) {
+			String ev = (String) event;
+			if (ev.equals(addNeighbor_event)) {
+				EmitterQ5Impl e = (EmitterQ5Impl) node.getProtocol(emiter);
+				e.emit(node, new Message(node.getID(), -1, "", null, my_pid));
+				EDSimulator.add(probe, addNeighbor_event, node, my_pid);
+
+			} else {
+				if (ev.equals(timer_event)) {
+					for (Long l : T.keySet()) {
+						if (!T.get(l)) {
+							removeNeighbor(l);
+						}
+						T.put(l, false);
+					}
+					EDSimulator.add(timer, timer_event, node, my_pid);
+				} else {
+					EDSimulator.add(probe, addNeighbor_event, node, my_pid);
+					EDSimulator.add(timer, timer_event, node, my_pid);
+				}
+			}
+		} else {
+			if (event instanceof Message) {
+				Message m = (Message) event;
+				addNeighbor(m.getIdSrc());
+				T.put(m.getIdSrc(), true);
+			}
+		}
+	}
+}
+
+\end{lstlisting}
+\end{shaded}
+\end{minipage}
+
 \subsection{Question 7}
 \subsection{Question 8}
 \subsection{Question 9}
