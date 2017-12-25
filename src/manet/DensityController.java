@@ -13,7 +13,6 @@ public class DensityController implements Control{
 	private static final String PAR_NEIGHBORPID = "neighborprotocol";
 
 	private int neighbour_pid;
-	private double period;
 	private NeighborProtocolImpl neighbourProt;
 	private List<Double> densities;
 	private List<Double> standardDeviations;
@@ -26,19 +25,16 @@ public class DensityController implements Control{
 
 	@Override
 	public boolean execute() {
-		//EDSimulator.add(0, MessageType.stats, node, neighbour_pid);
-		System.out.println(getDensity());
 		densities.add(getDensity());
 		standardDeviations.add(getStandardDeviation());
-		System.out.println("----------- ADensity "+getDensity());
-		System.out.println("----------- ADensity "+getStandardDeviation());
-		System.out.println("----------- ADensity "+getAverageDensity());
-		System.out.println("----------- AStandardDeviation "+getAverageStandardDeviation());
-		System.out.println("----------- DensityStandardDeviation "+getDensityStandardDeviation());
+		//System.out.println("----------- ADensity "+getDensity());
+		//System.out.println("----------- ADensity "+getStandardDeviation());
+		//System.out.println("----------- ADensity "+getAverageDensity());
+		//System.out.println("----------- AStandardDeviation "+getAverageStandardDeviation());
+		//System.out.println("----------- DensityStandardDeviation "+getDensityStandardDeviation());
 		return false;
 	}
 
-	
 	public double getDensity() {
 		double sum = 0;
 		for(int i = 0;i < Network.size();i++) {
