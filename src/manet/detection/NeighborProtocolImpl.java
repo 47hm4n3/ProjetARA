@@ -65,10 +65,6 @@ public class NeighborProtocolImpl implements NeighborProtocol, EDProtocol {
 		if (event instanceof String) {
 			msg = new Message(host.getID(), -1, "", MessageType.probe, neighbour_pid);
 			switch ((String) event) {
-			case MessageType.firstprobe:
-				((EmitterImpl) host.getProtocol(emitter_pid)).emit(host, msg) ;
-				EDSimulator.add(period, MessageType.probe, host, neighbour_pid);
-				break;
 			case MessageType.probe:
 				((EmitterImpl) host.getProtocol(emitter_pid)).emit(host, msg);
 				EDSimulator.add(period, MessageType.probe, host, neighbour_pid);

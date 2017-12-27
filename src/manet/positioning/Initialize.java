@@ -29,7 +29,6 @@ public class Initialize implements Control {
 			pos = (PositionProtocol) node.getProtocol(position_pid);
 			pos.initialiseCurrentPosition(Network.get(i));
 			EDSimulator.add(0, PositionProtocolImpl.loop_event, node, position_pid);
-			EDSimulator.add(0, MessageType.firstprobe, node, neighbour_pid);
 			EDSimulator.add(0, MessageType.probe, node, neighbour_pid);
 			EDSimulator.add(0, MessageType.timer, node, neighbour_pid);
 		}
