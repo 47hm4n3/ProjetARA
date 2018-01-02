@@ -27,11 +27,11 @@ public class DensityController implements Control{
 	public boolean execute() {
 		densities.add(getDensity());
 		standardDeviations.add(getStandardDeviation());
-		//System.out.println("----------- ADensity "+getDensity());
-		//System.out.println("----------- ADensity "+getStandardDeviation());
-		//System.out.println("----------- ADensity "+getAverageDensity());
-		//System.out.println("----------- AStandardDeviation "+getAverageStandardDeviation());
-		//System.out.println("----------- DensityStandardDeviation "+getDensityStandardDeviation());
+		System.out.println("----------- Density "+getDensity());
+		System.out.println("----------- StandardDeviation "+getStandardDeviation());
+		System.out.println("----------- AverageDensity "+getAverageDensity());
+		System.out.println("----------- AverageStandardDeviation "+getAverageStandardDeviation());
+		System.out.println("----------- DensityStandardDeviation "+getDensityStandardDeviation());
 		return false;
 	}
 
