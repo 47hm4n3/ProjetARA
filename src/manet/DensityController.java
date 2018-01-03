@@ -32,6 +32,9 @@ public class DensityController implements Control{
 		System.out.println("----------- AverageDensity "+getAverageDensity());
 		System.out.println("----------- AverageStandardDeviation "+getAverageStandardDeviation());
 		System.out.println("----------- DensityStandardDeviation "+getDensityStandardDeviation());
+		System.out.println("----------- D "+getAverageDensity());
+		//System.out.println("----------- E/D "+getStandardDeviation()/getAverageDensity());
+		System.out.println("----------- ED/D "+getDensityStandardDeviation()/getAverageDensity());
 		return false;
 	}
 
