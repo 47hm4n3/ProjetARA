@@ -27,20 +27,21 @@ public class DensityController implements Control{
 	public boolean execute() {
 		densities.add(getDensity());
 		standardDeviations.add(getStandardDeviation());
-		System.out.println("----------- Density "+getDensity());
-		System.out.println("----------- StandardDeviation "+getStandardDeviation());
-		System.out.println("----------- AverageDensity "+getAverageDensity());
-		System.out.println("----------- AverageStandardDeviation "+getAverageStandardDeviation());
-		System.out.println("----------- DensityStandardDeviation "+getDensityStandardDeviation());
+		//System.out.println("----------- Density "+getDensity());
+		//System.out.println("----------- StandardDeviation "+getStandardDeviation());
+		//System.out.println("----------- AverageDensity "+getAverageDensity());
+		//System.out.println("----------- AverageStandardDeviation "+getAverageStandardDeviation());
+		//System.out.println("----------- DensityStandardDeviation "+getDensityStandardDeviation());
+		System.out.println("-------------------------------");
 		System.out.println("----------- D "+getAverageDensity());
-		//System.out.println("----------- E/D "+getStandardDeviation()/getAverageDensity());
+		System.out.println("----------- E/D "+getStandardDeviation()/getAverageDensity());
 		System.out.println("----------- ED/D "+getDensityStandardDeviation()/getAverageDensity());
 		return false;
 	}
 
 	public double getDensity() {
 		double sum = 0;
-		for(int i = 0;i < Network.size();i++) {
+		for(int i = 0; i < Network.size(); i++) {
 			neighbourProt = (NeighborProtocolImpl)Network.get(i).getProtocol(neighbour_pid);
 			sum += neighbourProt.getNeighbors().size();
 		}
@@ -50,7 +51,7 @@ public class DensityController implements Control{
 	public double getStandardDeviation() {
 		double density = getDensity();
 		double sum = 0;
-		for (int i = 0; i<Network.size(); i++) {
+		for (int i = 0; i < Network.size(); i++) {
 			neighbourProt = (NeighborProtocolImpl)Network.get(i).getProtocol(neighbour_pid);
 			 sum += Math.pow(((double)neighbourProt.getNeighbors().size() - density),2) ;
 		}
@@ -67,7 +68,7 @@ public class DensityController implements Control{
 	
 	public double getAverageStandardDeviation() {
 		double sum = 0;
-		for (int i =0; i< standardDeviations.size(); i++) {
+		for (int i = 0; i < standardDeviations.size(); i++) {
 			sum += standardDeviations.get(i);
 		}
 		return sum/standardDeviations.size();
