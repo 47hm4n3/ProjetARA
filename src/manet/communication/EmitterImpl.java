@@ -59,7 +59,7 @@ public class EmitterImpl implements Emitter {
 				hostPos = (PositionProtocol) host.getProtocol(position_pid);
 				nodePos   = (PositionProtocol) node.getProtocol(position_pid);
 				if ((hostPos.getCurrentPosition().distance(nodePos.getCurrentPosition()) <= this.getScope())) { // In my scope
-					EDSimulator.add(this.getLatency(), msg, node, neighbour_pid); // Send()
+					EDSimulator.add(this.getLatency(), msg, node, msg.getPid()); // Send()
 				}
 			}
 		}

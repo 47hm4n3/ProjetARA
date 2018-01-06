@@ -1,6 +1,7 @@
 package manet.algorithm.gossip;
 
 
+import java.util.ArrayList;
 import java.util.List;
 
 import manet.communication.EmitterImplF;
@@ -30,29 +31,33 @@ public class GossipControler implements Control{
 		gossip_pid = Configuration.getPid(prefix + "." + PAR_GOSSIPPID);
 		waves_number = Configuration.getInt(prefix + "." + PAR_WAVESNUMBER);
 		w = waves_number;
+		atts = new ArrayList<Double>();
+		ERs = new ArrayList<Double>();
 	}
 
 	@Override
 	public boolean execute() {
 		if (w > 0) {
+			System.out.println("vague "+w);
 			initialize(); // Pick a new node to broadcast
+			System.out.println("N "+((EmitterImplF)node.getProtocol(emitterflooding_pid)).getN());
 			if (((EmitterImplF)node.getProtocol(emitterflooding_pid)).getN() == 0) { // the previous wave is finished
 				((GossipProtocolImpl)node.getProtocol(gossip_pid)).initiateGossip(node, w, node.getID());
 				w--; // decrement number of remaining waves
 				atts.add(getAtt());
 				ERs.add(getER());
+				System.out.println(getAverageAtt());
 			}
 		}
 		return false;
 	}
 
 	public double getAtt () {
-		
-		return 0.0;
+		double n = ((EmitterImplF)node.getProtocol(emitterflooding_pid)).getNinit();
+		return n/Network.size();
 	}
 	
 	public double getER () {
-		
 		return 0.0;
 	}
 

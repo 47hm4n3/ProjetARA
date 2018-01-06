@@ -4,6 +4,7 @@ import manet.Message;
 import manet.detection.NeighborProtocolImpl;
 import peersim.config.Configuration;
 import peersim.core.Node;
+import peersim.edsim.EDSimulator;
 
 public class EmitterImplF implements Emitter {
 	
@@ -16,6 +17,7 @@ public class EmitterImplF implements Emitter {
 	private Node node;
 	
 	private int N;
+	private int Ninit;
 	
 	public EmitterImplF(String prefix) {
 		emitter_pid = Configuration.getPid(prefix + "." + PAR_EMITTERPID);
@@ -44,16 +46,28 @@ public class EmitterImplF implements Emitter {
 	
 	@Override
 	public void emit(Node host, Message msg) {
+		node = host;
 		((EmitterImpl)host.getProtocol(emitter_pid)).emit(host,msg);
+		
 		N += ((NeighborProtocolImpl)host.getProtocol(neighbour_pid)).getNeighbors().size();	
+		Ninit = N;
+		System.out.println(host.getID() +" : " +((NeighborProtocolImpl)host.getProtocol(neighbour_pid)).getNeighbors().size());
 	}
 	
 	public void decrementN (int n) {
 		N -= n;
 	}
+	
+	public int getNeighbors() {
+		return ((NeighborProtocolImpl)node.getProtocol(neighbour_pid)).getNeighbors().size();	
+	}
 
 	public int getN () {
 		return this.N;
+	}
+	
+	public int getNinit() {
+		return Ninit;
 	}
 	
 }
