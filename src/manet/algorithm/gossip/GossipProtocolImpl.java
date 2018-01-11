@@ -26,7 +26,7 @@ public class GossipProtocolImpl extends GossipProtocolAbstract {
 		((EmitterImplF) host.getProtocol(emitterflooding_pid)).emit(host, msg); // emit
 		//firstTime = false;
 		((GossipProtocolImpl) Network.get((int)id_initiator).getProtocol(gossip_pid)).setFirstTime(false); // emit
-		System.out.println(host.getID() + " inite la diffusion ");
+		//System.out.println(host.getID() + " inite la diffusion ");
 		
 	}
 
@@ -37,11 +37,12 @@ public class GossipProtocolImpl extends GossipProtocolAbstract {
 				Message m = (Message) event;
 				if (firstTime) {
 					firstTime = false;
+					//System.out.println(host.getID() + " decremente first time");
 					((EmitterImplF) host.getProtocol(emitterflooding_pid)).decrementN(1);
 					((EmitterImplF) host.getProtocol(emitterflooding_pid)).emit(host, m);
 				} else {
 					((EmitterImplF) host.getProtocol(emitterflooding_pid)).decrementN(1);
-					System.out.println(host.getID() + " decremente");
+					//System.out.println(host.getID() + " decremente");
 				}
 			} else {
 				System.out.println("ERROR");

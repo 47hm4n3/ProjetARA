@@ -1,17 +1,14 @@
 package manet.communication;
 
 import manet.Message;
-import manet.detection.NeighborProtocolImpl;
 import peersim.config.Configuration;
 import peersim.core.Node;
 
 public class EmitterImplF implements Emitter {
 	
 	private static final String PAR_EMITTERPID = "emitterprotocol";
-	private static final String PAR_NEIGHBOURPID = "neighbourprotocol";
 	
 	private final int emitter_pid;
-	private final int neighbour_pid;
 	
 	private Node node;
 	
@@ -20,7 +17,6 @@ public class EmitterImplF implements Emitter {
 	
 	public EmitterImplF(String prefix) {
 		emitter_pid = Configuration.getPid(prefix + "." + PAR_EMITTERPID);
-		neighbour_pid = Configuration.getPid(prefix + "." + PAR_NEIGHBOURPID);
 		N = 0;
 	}
 	
@@ -47,19 +43,15 @@ public class EmitterImplF implements Emitter {
 	public void emit(Node host, Message msg) {
 		node = host;
 		((EmitterImpl)host.getProtocol(emitter_pid)).emit(host,msg);
-		int neighbours = ((NeighborProtocolImpl)host.getProtocol(neighbour_pid)).getNeighbors().size();;
+		int neighbours = EmitterImpl.getRealN();
 		N += neighbours;	
 		Ninit = N;
-		System.out.println(host.getID()+" N init " + N);
-		System.out.println(host.getID() +" : " +((NeighborProtocolImpl)host.getProtocol(neighbour_pid)).getNeighbors().size());
+		//System.out.println(host.getID()+" N init " + N);
+		//System.out.println(host.getID()+" neighbours " + neighbours);
 	}
 	
 	public void decrementN (int n) {
 		N -= n;
-	}
-	
-	public int getNeighbors() {
-		return ((NeighborProtocolImpl)node.getProtocol(neighbour_pid)).getNeighbors().size();	
 	}
 
 	public int  getN () {

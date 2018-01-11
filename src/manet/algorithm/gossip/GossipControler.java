@@ -42,14 +42,13 @@ public class GossipControler implements Control{
 			System.out.println("vague "+w);
 			initialize(); // Pick a new node to broadcast
 			if (((EmitterImplF)node.getProtocol(emitterflooding_pid)).getN() == 0) { // the previous wave is finished
+				for(int i=0;i<Network.size();i++) {
+					((GossipProtocolAbstract)Network.get(i).getProtocol(gossip_pid)).setFirstTime(true);
+				}
 				((GossipProtocolImpl)node.getProtocol(gossip_pid)).initiateGossip(node, w, node.getID());
 				w--; // decrement number of remaining waves
 				atts.add(getAtt());
 				ERs.add(getER());
-				for(int i=0;i<Network.size();i++) {
-						((GossipProtocolAbstract)Network.get(i).getProtocol(gossip_pid)).setFirstTime(true);
-				}
-				
 			}
 		}
 		return false;

@@ -10,36 +10,43 @@ import peersim.edsim.EDSimulator;
 public class EmitterImpl implements Emitter {
 
 	private static final String PAR_POSITIONPID = "positionprotocol";
-	private static final String PAR_NEIGHBOURPID = "neighbourprotocol";
 	private static final String PAR_LATENCY = "latency";
 	private static final String PAR_SCOPE = "scope";
 
-	private final int neighbour_pid;
 	private final int position_pid;
 	private final int latency;
 	private final int scope;
-
+	
 	private PositionProtocol hostPos = null;
 	private PositionProtocol nodePos = null;
 	private Node node = null;
 
+	public static Integer realN;
+	
 	public EmitterImpl(String prefix) {
 		position_pid = Configuration.getPid(prefix + "." + PAR_POSITIONPID);
-		neighbour_pid = Configuration.getPid(prefix + "." + PAR_NEIGHBOURPID);
 		latency = Configuration.getInt(prefix + "." + PAR_LATENCY);
 		scope = Configuration.getInt(prefix + "." + PAR_SCOPE);
 	}
 
 	@Override
 	public int getLatency() {
-		// return this.getLatency();
 		return this.latency;
 	}
 
 	@Override
 	public int getScope() {
-		// return this.getScope();
 		return this.scope;
+	}
+
+	
+	
+	public static Integer getRealN() {
+		return realN;
+	}
+
+	public void setRealN(Integer realN) {
+		this.realN = realN;
 	}
 
 	public EmitterImpl clone() {
@@ -53,6 +60,7 @@ public class EmitterImpl implements Emitter {
 	
 	@Override
 	public void emit(Node host, Message msg) {
+		realN = 0;
 		for (int i = 0; i < Network.size(); i++) { // For all network nodes
 			node = Network.get(i);
 			if (host.getID() != node.getID()) { // Except me
@@ -60,6 +68,7 @@ public class EmitterImpl implements Emitter {
 				nodePos   = (PositionProtocol) node.getProtocol(position_pid);
 				if ((hostPos.getCurrentPosition().distance(nodePos.getCurrentPosition()) <= this.getScope())) { // In my scope
 					EDSimulator.add(this.getLatency(), msg, node, msg.getPid()); // Send()
+					realN ++;
 				}
 			}
 		}
