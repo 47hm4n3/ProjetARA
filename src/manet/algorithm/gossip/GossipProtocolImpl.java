@@ -5,7 +5,6 @@ import manet.communication.EmitterImplF;
 import peersim.config.Configuration;
 import peersim.core.Network;
 import peersim.core.Node;
-import peersim.edsim.EDProtocol;
 import utils.MessageType;
 
 public class GossipProtocolImpl extends GossipProtocolAbstract {

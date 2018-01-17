@@ -25,8 +25,6 @@ public class GossipControler implements Control{
 	private List<Double> atts;
 	private List<Double> ERs;
 	
-	
-	
 	public GossipControler (String prefix) {
 		emitterflooding_pid = Configuration.getPid(prefix + "." + PAR_EMITTERPID);
 		gossip_pid = Configuration.getPid(prefix + "." + PAR_GOSSIPPID);
@@ -39,28 +37,35 @@ public class GossipControler implements Control{
 	@Override
 	public boolean execute() {
 		if (w > 0) {
-			System.out.println("vague "+w);
+			System.out.println("vague "+ (waves_number - w + 1));
 			initialize(); // Pick a new node to broadcast
-			if (((EmitterImplF)node.getProtocol(emitterflooding_pid)).getN() == 0) { // the previous wave is finished
-				for(int i=0;i<Network.size();i++) {
+			if (((EmitterImplF)node.getProtocol(emitterflooding_pid)).getN() == 0) { // the previous wave has finished
+				for(int i=0;i<Network.size();i++) { // reset the first time reception boolean to true
 					((GossipProtocolAbstract)Network.get(i).getProtocol(gossip_pid)).setFirstTime(true);
 				}
-				((GossipProtocolImpl)node.getProtocol(gossip_pid)).initiateGossip(node, w, node.getID());
+				((GossipProtocolImpl)node.getProtocol(gossip_pid)).initiateGossip(node, w, node.getID()); // initiate a new wave
 				w--; // decrement number of remaining waves
-				atts.add(getAtt());
-				ERs.add(getER());
+				atts.add(getAtt()); // calculate and save this wave's Att
+				System.out.println("Att = "+getAtt());
+				ERs.add(getER()); // calculate and save this wave's ER
+				System.out.println("ER  = "+getER());
 			}
 		}
 		return false;
 	}
 
 	public double getAtt () {
-		double n = ((EmitterImplF)node.getProtocol(emitterflooding_pid)).getNinit();
-		return n/Network.size();
+		// Pourcentage de noeuds atteignables ayant recu le message
+		return ((EmitterImplF)node.getProtocol(emitterflooding_pid)).getN()/Network.size();
 	}
 	
 	public double getER () {
-		return 0.0;
+		int r = 1;
+		int t = 0;
+		// Nombre de noeuds ayant recu r
+		// Nombre de noeuds ayant transmis t
+		// ER = (r - t) / r
+		return (r - t)/r;
 	}
 
 	public double getAverageAtt () {
@@ -80,15 +85,22 @@ public class GossipControler implements Control{
 	}
 	
 	public double getAttStandardDeviation () {
-		
-		return 0.0;
+		double sum = 0;
+		double num = getAverageAtt();
+		for (int i =0; i < atts.size(); i++) {
+			sum += Math.pow((atts.get(i) - num),2);
+		}
+		return Math.sqrt(sum/atts.size());
 	}
 	
 	public double getERStandardDeviation () {
-		
-		return 0.0;
+		double sum = 0;
+		double num = getAverageER();
+		for (int i =0; i < ERs.size(); i++) {
+			sum += Math.pow((ERs.get(i) - num),2);
+		}
+		return Math.sqrt(sum/ERs.size());
 	}
-	
 	
 	private void initialize() {
 		node = Network.get(Math.abs(CommonState.r.nextInt(Network.size())));
