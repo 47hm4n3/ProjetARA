@@ -3,6 +3,7 @@ package manet.algorithm.gossip;
 import manet.Message;
 import manet.communication.EmitterImplF;
 import peersim.config.Configuration;
+import peersim.core.CommonState;
 import peersim.core.Network;
 import peersim.core.Node;
 import utils.MessageType;
@@ -10,13 +11,17 @@ import utils.MessageType;
 public class GossipProtocolImpl extends GossipProtocolAbstract {
 
 	private static final String PAR_EMITTERPID = "emitterfloodingprotocol";
+	private static final String PAR_PROBA = "proba";
 
 	private final int gossip_pid;
 	private final int emitterflooding_pid;
+	private final double proba;
+	
 	public GossipProtocolImpl(String prefix) {
 		String tmp[] = prefix.split("\\.");
 		gossip_pid = Configuration.lookupPid(tmp[tmp.length - 1]);
 		emitterflooding_pid = Configuration.getPid(prefix + "." + PAR_EMITTERPID);
+		proba = Configuration.getDouble(prefix + "." + PAR_PROBA, 1.0);
 	}
 
 	@Override
@@ -35,10 +40,14 @@ public class GossipProtocolImpl extends GossipProtocolAbstract {
 			if (((Message) event).getTag() == MessageType.flooding) {
 				Message m = (Message) event;
 				if (firstTime) {
+					received++;
 					firstTime = false;
 					//System.out.println(host.getID() + " decremente first time");
 					((EmitterImplF) host.getProtocol(emitterflooding_pid)).decrementN(1);
-					((EmitterImplF) host.getProtocol(emitterflooding_pid)).emit(host, m);
+					if(CommonState.r.nextDouble()<proba) {
+						((EmitterImplF) host.getProtocol(emitterflooding_pid)).emit(host, m);
+						transmited++;
+					}
 				} else {
 					((EmitterImplF) host.getProtocol(emitterflooding_pid)).decrementN(1);
 					//System.out.println(host.getID() + " decremente");

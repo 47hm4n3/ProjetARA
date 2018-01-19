@@ -24,6 +24,8 @@ public class GossipControler implements Control{
 	private int w;
 	private List<Double> atts;
 	private List<Double> ERs;
+	private double nbAtt;
+	private boolean start = true;
 	
 	public GossipControler (String prefix) {
 		emitterflooding_pid = Configuration.getPid(prefix + "." + PAR_EMITTERPID);
@@ -33,38 +35,72 @@ public class GossipControler implements Control{
 		atts = new ArrayList<Double>();
 		ERs = new ArrayList<Double>();
 	}
-
+	
 	@Override
 	public boolean execute() {
 		if (w > 0) {
 			System.out.println("vague "+ (waves_number - w + 1));
 			initialize(); // Pick a new node to broadcast
 			if (((EmitterImplF)node.getProtocol(emitterflooding_pid)).getN() == 0) { // the previous wave has finished
-				for(int i=0;i<Network.size();i++) { // reset the first time reception boolean to true
-					((GossipProtocolAbstract)Network.get(i).getProtocol(gossip_pid)).setFirstTime(true);
-				}
 				((GossipProtocolImpl)node.getProtocol(gossip_pid)).initiateGossip(node, w, node.getID()); // initiate a new wave
-				w--; // decrement number of remaining waves
-				atts.add(getAtt()); // calculate and save this wave's Att
-				System.out.println("Att = "+getAtt());
+				if(!start) {
+				double d = getAtt();
+				System.out.println("atteignabilité = " + d);
+				atts.add(d); // calculate and save this wave's Att
 				ERs.add(getER()); // calculate and save this wave's ER
-				System.out.println("ER  = "+getER());
+				//System.out.println("ER  = "+getER());
+				}
+				w--; // decrement number of remaining waves
+				start = false;
 			}
+		}else {
+			System.out.println("Moyenne Att : "+getAverageAtt());
+			System.out.println("Moyenne ER : "+getAverageER());
+			System.out.println("Ecart type Att : "+getAttStandardDeviation());
+			System.out.println("Ecart type ER : "+getERStandardDeviation());
 		}
+		System.out.println("ALLO"+atts.size());
 		return false;
 	}
-
+	
+	
+	
 	public double getAtt () {
 		// Pourcentage de noeuds atteignables ayant recu le message
-		return ((EmitterImplF)node.getProtocol(emitterflooding_pid)).getN()/Network.size();
+		nbAtt = 0;
+		for(int i=0;i<Network.size();i++) { // reset the first time reception boolean to true
+			Node n = Network.get(i);
+			GossipProtocolAbstract gpa = ((GossipProtocolAbstract)n.getProtocol(gossip_pid));
+			if(!gpa.getFirstTime()) {
+				nbAtt++;
+				gpa.setFirstTime(true);
+			}
+			
+		}
+		
+		System.out.println();
+		System.out.println("nbAtt = "+nbAtt);
+		
+		return nbAtt/((double)Network.size());
 	}
 	
 	public double getER () {
-		int r = 1;
-		int t = 0;
+		double r = 0;
+		double t = 0;
 		// Nombre de noeuds ayant recu r
 		// Nombre de noeuds ayant transmis t
 		// ER = (r - t) / r
+		for(int i=0;i<Network.size();i++) {
+			Node n = Network.get(i);
+			GossipProtocolAbstract gpa = ((GossipProtocolAbstract)n.getProtocol(gossip_pid));
+			r+= gpa.getReceived();
+			t+=gpa.getTransmited();
+			gpa.setReceived(0);
+			gpa.setTransmited(0);
+		}
+		
+		System.out.println("r = "+r+", t = "+t);
+		
 		return (r - t)/r;
 	}
 
@@ -73,6 +109,7 @@ public class GossipControler implements Control{
 		for (int i =0; i < atts.size(); i++) {
 			sum += atts.get(i);
 		}
+		
 		return sum/atts.size();
 	}
 	
