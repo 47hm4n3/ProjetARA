@@ -12,7 +12,7 @@ import peersim.core.Network;
 import peersim.core.Node;
 
 public class GossipControler implements Control{
-	
+
 	private static final String PAR_EMITTERPID = "emitterfloodingprotocol";
 	private static final String PAR_GOSSIPPID = "gossipprotocol";
 	private static final String PAR_WAVESNUMBER = "wavesnumber";
@@ -21,36 +21,37 @@ public class GossipControler implements Control{
 	private final int gossip_pid;
 	private final int waves_number;
 	private Node node;
-	private int w;
+	private int wave;
 	private List<Double> atts;
 	private List<Double> ERs;
 	private double nbAtt;
 	private boolean start = true;
-	
+
 	public GossipControler (String prefix) {
 		emitterflooding_pid = Configuration.getPid(prefix + "." + PAR_EMITTERPID);
 		gossip_pid = Configuration.getPid(prefix + "." + PAR_GOSSIPPID);
 		waves_number = Configuration.getInt(prefix + "." + PAR_WAVESNUMBER);
-		w = waves_number;
+		wave = waves_number;
 		atts = new ArrayList<Double>();
 		ERs = new ArrayList<Double>();
 	}
-	
+
 	@Override
 	public boolean execute() {
-		if (w > 0) {
-			System.out.println("vague "+ (waves_number - w + 1));
+		if (wave > 0) { 
+			System.out.println("vague "+ (waves_number - wave + 1));
 			initialize(); // Pick a new node to broadcast
 			if (((EmitterImplF)node.getProtocol(emitterflooding_pid)).getN() == 0) { // the previous wave has finished
-				((GossipProtocolImpl)node.getProtocol(gossip_pid)).initiateGossip(node, w, node.getID()); // initiate a new wave
+				((GossipProtocolImpl)node.getProtocol(gossip_pid)).initiateGossip(node, wave, node.getID()); // initiate a new wave
 				if(!start) {
-				double d = getAtt();
-				System.out.println("atteignabilité = " + d);
-				atts.add(d); // calculate and save this wave's Att
-				ERs.add(getER()); // calculate and save this wave's ER
-				//System.out.println("ER  = "+getER());
+					double d = getAtt();
+					System.out.println("atteignabilité = " + d);
+					atts.add(d); // calculate and save this wave's Att
+					ERs.add(getER()); // calculate and save this wave's ER
+					//System.out.println("ER  = "+getER());
+					wave--; // decrement number of remaining waves
 				}
-				w--; // decrement number of remaining waves
+
 				start = false;
 			}
 		}else {
@@ -58,13 +59,14 @@ public class GossipControler implements Control{
 			System.out.println("Moyenne ER : "+getAverageER());
 			System.out.println("Ecart type Att : "+getAttStandardDeviation());
 			System.out.println("Ecart type ER : "+getERStandardDeviation());
+			return true;
 		}
-		System.out.println("ALLO"+atts.size());
+		//System.out.println("ALLO"+atts.size());
 		return false;
 	}
-	
-	
-	
+
+
+
 	public double getAtt () {
 		// Pourcentage de noeuds atteignables ayant recu le message
 		nbAtt = 0;
@@ -75,15 +77,15 @@ public class GossipControler implements Control{
 				nbAtt++;
 				gpa.setFirstTime(true);
 			}
-			
+
 		}
-		
+
 		System.out.println();
 		System.out.println("nbAtt = "+nbAtt);
-		
+
 		return nbAtt/((double)Network.size());
 	}
-	
+
 	public double getER () {
 		double r = 0;
 		double t = 0;
@@ -98,9 +100,9 @@ public class GossipControler implements Control{
 			gpa.setReceived(0);
 			gpa.setTransmited(0);
 		}
-		
+
 		System.out.println("r = "+r+", t = "+t);
-		
+
 		return (r - t)/r;
 	}
 
@@ -109,10 +111,10 @@ public class GossipControler implements Control{
 		for (int i =0; i < atts.size(); i++) {
 			sum += atts.get(i);
 		}
-		
+
 		return sum/atts.size();
 	}
-	
+
 	public double getAverageER () {
 		double sum = 0;
 		for (int i =0; i < ERs.size(); i++) {
@@ -120,7 +122,7 @@ public class GossipControler implements Control{
 		}
 		return sum/ERs.size();
 	}
-	
+
 	public double getAttStandardDeviation () {
 		double sum = 0;
 		double num = getAverageAtt();
@@ -129,7 +131,7 @@ public class GossipControler implements Control{
 		}
 		return Math.sqrt(sum/atts.size());
 	}
-	
+
 	public double getERStandardDeviation () {
 		double sum = 0;
 		double num = getAverageER();
@@ -138,7 +140,7 @@ public class GossipControler implements Control{
 		}
 		return Math.sqrt(sum/ERs.size());
 	}
-	
+
 	private void initialize() {
 		node = Network.get(Math.abs(CommonState.r.nextInt(Network.size())));
 	}

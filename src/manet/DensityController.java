@@ -13,14 +13,20 @@ public class DensityController implements Control{
 	private static final String PAR_NEIGHBORPID = "neighborprotocol";
 
 	private int neighbour_pid;
-	private NeighborProtocolImpl neighbourProt;
+	private NeighborProtocolImpl []neighbourProt;
 	private List<Double> densities;
 	private List<Double> standardDeviations;
+	private int SIZE;
 	
 	public DensityController(String prefix) {
 		neighbour_pid = Configuration.getPid(prefix+"."+PAR_NEIGHBORPID);
 		densities = new ArrayList<Double>();
 		standardDeviations  = new ArrayList<Double>();
+		this.SIZE = Network.size();
+		neighbourProt = new NeighborProtocolImpl[SIZE];
+		for(int i = 0; i < SIZE; i++) 
+			neighbourProt[i] = (NeighborProtocolImpl)Network.get(i).getProtocol(neighbour_pid);
+		
 	}
 
 	@Override
@@ -41,19 +47,17 @@ public class DensityController implements Control{
 
 	public double getDensity() {
 		double sum = 0;
-		for(int i = 0; i < Network.size(); i++) {
-			neighbourProt = (NeighborProtocolImpl)Network.get(i).getProtocol(neighbour_pid);
-			sum += neighbourProt.getNeighbors().size();
+		for(int i = 0; i < SIZE; i++) {
+			sum += neighbourProt[i].getNeighbors().size();
 		}
 		return sum/Network.size();
 	}
 	
 	public double getStandardDeviation() {
-		double density = getDensity();
+		double density = densities.get(densities.size()-1); // on le calcule à la première instruction de la méthode execute()
 		double sum = 0;
-		for (int i = 0; i < Network.size(); i++) {
-			neighbourProt = (NeighborProtocolImpl)Network.get(i).getProtocol(neighbour_pid);
-			 sum += Math.pow(((double)neighbourProt.getNeighbors().size() - density),2) ;
+		for (int i = 0; i < SIZE; i++) {
+			 sum += Math.pow(((double)neighbourProt[i].getNeighbors().size() - density),2) ;
 		}
 		return Math.sqrt(sum/Network.size());
 	}

@@ -21,7 +21,7 @@ public class EmitterImplF implements Emitter {
 	}
 	
 	public EmitterImplF clone() {
-		try {
+		try {	
 			return (EmitterImplF) super.clone();
 		} catch (CloneNotSupportedException e) {
 			System.out.println("Cloning EmitterImplF Failed !");
