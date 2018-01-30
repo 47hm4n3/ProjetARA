@@ -32,16 +32,21 @@ public class DensityController implements Control{
 	@Override
 	public boolean execute() {
 		densities.add(getDensity());
-		standardDeviations.add(getStandardDeviation());
+		double averageDensity = getAverageDensity();
+		double standardDeviation = getStandardDeviation();
+		standardDeviations.add(standardDeviation);
 		//System.out.println("----------- Density "+getDensity());
 		//System.out.println("----------- StandardDeviation "+getStandardDeviation());
 		//System.out.println("----------- AverageDensity "+getAverageDensity());
 		//System.out.println("----------- AverageStandardDeviation "+getAverageStandardDeviation());
 		//System.out.println("----------- DensityStandardDeviation "+getDensityStandardDeviation());
 		//System.out.println("-------------------------------");
-		System.out.println("----------- D "+getAverageDensity());
-		System.out.println("----------- E/D "+getStandardDeviation()/getAverageDensity());
-		System.out.println("----------- ED/D "+getDensityStandardDeviation()/getAverageDensity());
+		
+		
+		
+		System.out.println("----------- D "+averageDensity);
+		System.out.println("----------- E/D "+standardDeviation/averageDensity);
+		System.out.println("----------- ED/D "+getDensityStandardDeviation()/averageDensity);
 		return false;
 	}
 
@@ -54,7 +59,7 @@ public class DensityController implements Control{
 	}
 	
 	public double getStandardDeviation() {
-		double density = densities.get(densities.size()-1); // on le calcule à la première instruction de la méthode execute()
+		double density = densities.get(densities.size()-1); // on le calcule ï¿½ la premiï¿½re instruction de la mï¿½thode execute()
 		double sum = 0;
 		for (int i = 0; i < SIZE; i++) {
 			 sum += Math.pow(((double)neighbourProt[i].getNeighbors().size() - density),2) ;
