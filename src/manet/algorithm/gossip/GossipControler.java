@@ -33,22 +33,22 @@ public class GossipControler implements Control {
 		wave = waves_number;
 		atts = new ArrayList<Double>();
 		ERs = new ArrayList<Double>();
-		//initialize(); // Pick a new node to broadcast
+		initialize(); // Pick a new node to broadcast
 	}
 
 	@Override
 	public boolean execute() {
 		if (wave > 0) {
-			initialize(); // Pick a new node to broadcast
-			if (((EmitterDecorator) node.getProtocol(emitterdecorator_pid)).getN() == 0 && start) { // the previous wave has finished
-				System.out.println("HELLOOOOOOOOOOOO");
-				((GossipProtocolFlooding) node.getProtocol(gossip_pid)).initiateGossip(node, wave, node.getID()); // initiate a new wave
+			
+			if (((EmitterDecorator) node.getProtocol(emitterdecorator_pid)).getN() == 0) { // the previous wave has finished
+				
 				if (node != null) {
 					((GossipProtocolFlooding) node.getProtocol(gossip_pid)).setInitator(false);
 				}
 				
-				//if (!start) {
-
+				
+				if (!start) {
+					
 					System.out.println("vague " + (waves_number - wave + 1) + " " + node.getID());
 					double d = getAtt();
 					System.out.println("atteignabilité = " + d);
@@ -57,8 +57,10 @@ public class GossipControler implements Control {
 					// System.out.println("ER = "+getER());
 					wave--; // decrement number of remaining waves
 					
-				//}
-				//start = false;
+				}
+				initialize(); // Pick a new node to broadcast
+				((GossipProtocolFlooding) node.getProtocol(gossip_pid)).initiateGossip(node, wave, node.getID()); // initiate a new wave
+				start = false;
 			}
 		} else {
 			System.out.println("Moyenne Att : " + getAverageAtt());
@@ -77,9 +79,10 @@ public class GossipControler implements Control {
 		for (int i = 0; i < Network.size(); i++) { // reset the first time reception boolean to true
 			Node n = Network.get(i);
 			GossipProtocolFlooding gpf = ((GossipProtocolFlooding) n.getProtocol(gossip_pid));
-			if (!gpf.getFirstTime()) {
+			if (gpf.getFirstRecv()) {
 				nbAtt++;
-				gpf.setFirstTime(true);
+				gpf.setFirstRecv(false);
+				gpf.setAlreadySent(false);
 			}
 
 		}

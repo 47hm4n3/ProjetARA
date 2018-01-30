@@ -19,7 +19,8 @@ public class GossipProtocolFlooding implements GossipProtocol, EDProtocol {
 	private final int emitterdecorator_pid;
 	private final double proba;
 	private boolean initiator = false;
-	private boolean firstTime = true;
+	private boolean alreadySent = false;
+	private boolean firstRecv = false;
 
 	public GossipProtocolFlooding(String prefix) {
 		String tmp[] = prefix.split("\\.");
@@ -39,8 +40,9 @@ public class GossipProtocolFlooding implements GossipProtocol, EDProtocol {
 
 	@Override
 	public void initiateGossip(Node host, int id, long id_initiator) {
-		firstTime = false;
+		alreadySent = true; 
 		initiator = true;
+		firstRecv = true;
 		System.out.println(host.getID() + " est initateur");
 		Message msg = new Message(host.getID(), -1, MessageType.flooding, initiator, gossip_pid); // tag == flooding
 		((EmitterDecorator) host.getProtocol(emitterdecorator_pid)).emit(host, msg); // emit
@@ -50,28 +52,42 @@ public class GossipProtocolFlooding implements GossipProtocol, EDProtocol {
 	@Override
 	public void processEvent(Node host, int pid, Object event) {
 		if (event instanceof Message) {
+			Message msg = new Message(host.getID(), host.getID(), MessageType.decrement, firstRecv,
+					emitterdecorator_pid);
+			if(!firstRecv) {
+				firstRecv = true;
+			}
 			Message m = (Message) event;
-			if (firstTime) {
+			
+			if (!alreadySent) {
 				if (CommonState.r.nextDouble() < proba) {
 					((EmitterDecorator) host.getProtocol(emitterdecorator_pid)).emit(host, m);
-					firstTime = false;
+					alreadySent = true;
 				}
 			}
-			Message msg = new Message(host.getID(), host.getID(), MessageType.decrement, firstTime,
-					emitterdecorator_pid);
 			EDSimulator.add(0, msg, host, emitterdecorator_pid); // Decremente reception
 		}
 	}
 
-	public boolean getFirstTime() {
-		return firstTime;
+	public boolean getAlreadySent() {
+		return alreadySent;
 	}
 
-	public void setFirstTime(boolean firstTime) {
-		this.firstTime = firstTime;
+	public void setAlreadySent(boolean alreadySent) {
+		this.alreadySent = alreadySent;
 	}
 
 	public void setInitator(boolean initator) {
 		this.initiator = initator;
 	}
+
+	public boolean getFirstRecv() {
+		return firstRecv;
+	}
+
+	public void setFirstRecv(boolean firstRecv) {
+		this.firstRecv = firstRecv;
+	}
+	
+	
 }

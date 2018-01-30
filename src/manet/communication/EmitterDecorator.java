@@ -49,11 +49,14 @@ public class EmitterDecorator extends EmitterImpl implements EDProtocol {
 
 	@Override
 	public void emit(Node host, Message msg) {
-		super.emit(host, msg);
+		
+		if(msg.getContent() == null || !((boolean)msg.getContent())) {
+				transmited++;
+		}
+		Message newMsg = new Message(msg.getIdSrc(), msg.getIdDest(), msg.getTag(), null, msg.getPid());
+		super.emit(host, newMsg);
 		N += nbNeighbors(host);
-		//if(msg.getContent() != null &&  !(boolean)msg.getContent()){
-			transmited++;
-		//}
+
 	}
 
 	@Override
@@ -63,8 +66,7 @@ public class EmitterDecorator extends EmitterImpl implements EDProtocol {
 			if (msg.getTag() == MessageType.decrement) { // Reception depuis la couche applicative
 				N--;
 				if (msg.getContent() != null) {
-					if (((boolean) msg.getContent())) {
-						System.out.println("incrementer received");
+					if (!((boolean) msg.getContent())) {
 						received++;
 					}
 				} else {
