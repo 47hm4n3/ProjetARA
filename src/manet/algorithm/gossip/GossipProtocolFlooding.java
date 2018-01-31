@@ -11,9 +11,9 @@ import peersim.edsim.EDSimulator;
 import utils.MessageType;
 
 public class GossipProtocolFlooding extends GossipProtocolAbstract {
-	
+
 	private static final String PAR_PROBA = "proba";
-	
+
 	private final int gossip_pid;
 	private final int emitterdecorator_pid;
 	private final double proba;
@@ -28,14 +28,15 @@ public class GossipProtocolFlooding extends GossipProtocolAbstract {
 	public GossipProtocolFlooding clone() {
 		return (GossipProtocolFlooding) super.clone();
 	}
-	
 
 	@Override
 	public void initiateGossip(Node host, int id, long id_initiator) {
-		alreadySent = true; 
+		alreadySent = true;
 		initiator = true;
 		firstRecv = true;
-		Message msg = new Message(host.getID(), -1, MessageType.flooding, initiator, emitterdecorator_pid); // tag == flooding
+		Message msg = new Message(host.getID(), -1, MessageType.flooding, initiator, emitterdecorator_pid); // tag
+																											// ==
+																											// flooding
 		((EmitterDecorator) host.getProtocol(emitterdecorator_pid)).emit(host, msg); // emit
 		// System.out.println(host.getID() + " initie la diffusion ");
 	}
@@ -45,22 +46,20 @@ public class GossipProtocolFlooding extends GossipProtocolAbstract {
 		if (event instanceof Message) {
 			Message msg = new Message(host.getID(), host.getID(), MessageType.decrement, firstRecv,
 					emitterdecorator_pid);
-			if(!firstRecv) {
+			if (!firstRecv) {
 				firstRecv = true;
-			}
-			Message m = (Message) event;
-			
-			if (!alreadySent) {
+				// }
+				Message m = (Message) event;
+
+				// if (!alreadySent) {
 				if (CommonState.r.nextDouble() < proba) {
 					((EmitterDecorator) host.getProtocol(emitterdecorator_pid)).emit(host, m);
 					alreadySent = true;
 				}
 			}
-			EDSimulator.add(0, msg, host, emitterdecorator_pid); // Decremente reception
+			EDSimulator.add(0, msg, host, emitterdecorator_pid); // Decremente
+																	// reception
 		}
 	}
 
-	
-	
-	
 }

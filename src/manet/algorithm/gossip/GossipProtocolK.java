@@ -45,10 +45,10 @@ public class GossipProtocolK extends GossipProtocolAbstract {
 					emitterdecorator_pid);
 			if(!firstRecv) {
 				firstRecv = true;
-			}
+			//}
 			Message m = (Message) event;
 			Message newMsg = new Message(m.getIdSrc(), m.getIdDest(), m.getTag(), null, m.getPid());
-			if (!alreadySent) {
+			//if (!alreadySent) {
 				prob = ((double)k)/((int)m.getContent());
 				if (CommonState.r.nextDouble() < prob) {
 					((EmitterDecorator) host.getProtocol(emitterdecorator_pid)).emit(host, newMsg);
