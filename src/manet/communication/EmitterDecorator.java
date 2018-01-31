@@ -1,5 +1,6 @@
 package manet.communication;
 
+
 import manet.Message;
 import manet.positioning.PositionProtocol;
 import peersim.config.Configuration;
@@ -21,8 +22,8 @@ public class EmitterDecorator extends EmitterImpl implements EDProtocol {
 
 	private static Integer N;
 
-	protected int received = 0;
-	protected int transmited = 0;
+	private int received = 0;
+	private int transmited = 0;
 
 	public EmitterDecorator(String prefix) {
 		super(prefix);
@@ -63,7 +64,10 @@ public class EmitterDecorator extends EmitterImpl implements EDProtocol {
 	public void processEvent(Node host, int pid, Object event) {
 		if (event instanceof Message) {
 			Message msg = ((Message) event);
-			if (msg.getTag() == MessageType.decrement) { // Reception depuis la couche applicative
+			
+			switch(msg.getTag()) {
+			
+			case MessageType.decrement :
 				N--;
 				if (msg.getContent() != null) {
 					if (!((boolean) msg.getContent())) {
@@ -72,17 +76,51 @@ public class EmitterDecorator extends EmitterImpl implements EDProtocol {
 				} else {
 					System.out.println("FLOODING CONTENT == NULL");
 				}
-			} else {
+				break;
+				
+			case MessageType.flooding : 
 				if (msg.getTag() == MessageType.flooding) {
 					Message newMsg = new Message(msg.getIdSrc(), msg.getIdSrc(), msg.getTag(), null, msg.getPid());
 					EDSimulator.add(0, newMsg, host, gossip_pid);
 				}
-				// System.out.println(host.getID() + " decremente");
+				break;
+				
+			case MessageType.flooding_algo3 :
+				if (msg.getTag() == MessageType.flooding_algo3) {
+					int v = nbNeighbors(host);
+					Message newMsg = new Message(msg.getIdSrc(), msg.getIdSrc(), msg.getTag(), v, msg.getPid());
+					EDSimulator.add(0, newMsg, host, gossip_pid);
+				}
+				break;
+			
+			case MessageType.flooding_algo4 :
+				if (msg.getTag() == MessageType.flooding_algo4) {
+					System.out.println("idsource : "+msg.getIdSrc()+", host id : "+host.getID());
+					Message newMsg = new Message(msg.getIdSrc(), msg.getIdSrc(), msg.getTag(), calculateDistance(host,msg.getIdSrc()), gossip_pid);
+					EDSimulator.add(0, newMsg, host, gossip_pid);
+				}
+				break;
+			
+			default :
+				System.out.println("ERROR");
+				break;
 			}
 		} else {
-			System.out.println("ERROR");
+			
 		}
 
+	}
+	
+	private double calculateDistance(Node host, long idSrc) {
+		PositionProtocol hostPos = null;
+		PositionProtocol nodePos = null;
+		Node node = null;
+		node = Network.get((int)idSrc);
+		
+		hostPos = (PositionProtocol) host.getProtocol(position_pid);
+		nodePos = (PositionProtocol) node.getProtocol(position_pid);
+		return hostPos.getCurrentPosition().distance(nodePos.getCurrentPosition())/(double)getScope();
+		
 	}
 
 	private int nbNeighbors(Node host) {
@@ -103,6 +141,7 @@ public class EmitterDecorator extends EmitterImpl implements EDProtocol {
 		}
 		return cpt;
 	}
+	
 
 	public void decrementN(int n) {
 		N -= n;

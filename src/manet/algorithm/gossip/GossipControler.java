@@ -43,7 +43,7 @@ public class GossipControler implements Control {
 			if (((EmitterDecorator) node.getProtocol(emitterdecorator_pid)).getN() == 0) { // the previous wave has finished
 				
 				if (node != null) {
-					((GossipProtocolFlooding) node.getProtocol(gossip_pid)).setInitator(false);
+					((GossipProtocolAbstract) node.getProtocol(gossip_pid)).setInitator(false);
 				}
 				
 				
@@ -56,10 +56,11 @@ public class GossipControler implements Control {
 					ERs.add(getER()); // calculate and save this wave's ER
 					// System.out.println("ER = "+getER());
 					wave--; // decrement number of remaining waves
+					resetStates();
 					
 				}
 				initialize(); // Pick a new node to broadcast
-				((GossipProtocolFlooding) node.getProtocol(gossip_pid)).initiateGossip(node, wave, node.getID()); // initiate a new wave
+				((GossipProtocolAbstract) node.getProtocol(gossip_pid)).initiateGossip(node, wave, node.getID()); // initiate a new wave
 				start = false;
 			}
 		} else {
@@ -72,17 +73,29 @@ public class GossipControler implements Control {
 		// System.out.println("ALLO"+atts.size());
 		return false;
 	}
+	
+	private void resetStates() {
+		for (int i = 0; i < Network.size(); i++) { // reset the first time reception boolean to true
+			Node n = Network.get(i);
+			GossipProtocolAbstract gpf = ((GossipProtocolAbstract) n.getProtocol(gossip_pid));
+			if (gpf.getFirstRecv()) {
+				gpf.setFirstRecv(false);
+				gpf.setAlreadySent(false);
+			}
+			EmitterDecorator ed = ((EmitterDecorator) n.getProtocol(emitterdecorator_pid));
+			ed.setReceived(0);
+			ed.setTransmited(0);
+		}
+	}
 
 	public double getAtt() {
 		// Pourcentage de noeuds atteignables ayant recu le message
 		nbAtt = 0;
 		for (int i = 0; i < Network.size(); i++) { // reset the first time reception boolean to true
 			Node n = Network.get(i);
-			GossipProtocolFlooding gpf = ((GossipProtocolFlooding) n.getProtocol(gossip_pid));
+			GossipProtocolAbstract gpf = ((GossipProtocolAbstract) n.getProtocol(gossip_pid));
 			if (gpf.getFirstRecv()) {
 				nbAtt++;
-				gpf.setFirstRecv(false);
-				gpf.setAlreadySent(false);
 			}
 
 		}
@@ -104,14 +117,13 @@ public class GossipControler implements Control {
 			EmitterDecorator ed = ((EmitterDecorator) n.getProtocol(emitterdecorator_pid));
 			r += ed.getReceived();
 			t += ed.getTransmited();
-			ed.setReceived(0);
-			ed.setTransmited(0);
 		}
 
 		System.out.println("r = " + r + ", t = " + t);
 
 		return (r - t) / r;
 	}
+	
 
 	public double getAverageAtt() {
 		double sum = 0;

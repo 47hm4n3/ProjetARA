@@ -111,6 +111,7 @@ public class PositionProtocolImpl implements PositionProtocol, EDProtocol {
 			this.current_speed = Math.min(current_speed, speed_max);
 			this.current_destination = PositioningStrategiesFactory.getNextDestinationStrategy()
 					.getNextDestination(host, this.current_speed);
+			System.out.println(host.getID()+" SPEED "+current_speed);
 
 		}
 
