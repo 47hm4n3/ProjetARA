@@ -12,23 +12,16 @@ import utils.MessageType;
 
 public class EmitterDecorator extends EmitterImpl implements EDProtocol {
 
-	private static final String PAR_EMITTERPID = "emitterprotocol";
 	private static final String PAR_POSITIONPID = "positionprotocol";
 	private static final String PAR_GOSSIPPID = "gossipprotocol";
 
-	private final int my_pid;
 	private final int gossip_pid;
 	private final int position_pid;
 
 	private static Integer N;
 
-	private int received = 0;
-	private int transmited = 0;
-
 	public EmitterDecorator(String prefix) {
 		super(prefix);
-		String tmp[] = prefix.split("\\.");
-		my_pid = Configuration.lookupPid(tmp[tmp.length - 1]);
 		position_pid = Configuration.getPid(prefix + "." + PAR_POSITIONPID);
 		gossip_pid = Configuration.getPid(prefix + "." + PAR_GOSSIPPID);
 		N = 0;
@@ -50,10 +43,7 @@ public class EmitterDecorator extends EmitterImpl implements EDProtocol {
 
 	@Override
 	public void emit(Node host, Message msg) {
-		
-		if(msg.getContent() == null || !((boolean)msg.getContent())) {
-				transmited++;
-		}
+
 		Message newMsg = new Message(msg.getIdSrc(), msg.getIdDest(), msg.getTag(), null, msg.getPid());
 		super.emit(host, newMsg);
 		N += nbNeighbors(host);
@@ -64,63 +54,46 @@ public class EmitterDecorator extends EmitterImpl implements EDProtocol {
 	public void processEvent(Node host, int pid, Object event) {
 		if (event instanceof Message) {
 			Message msg = ((Message) event);
-			
+			Message newMsg = null;
 			switch(msg.getTag()) {
-			
+
 			case MessageType.decrement :
 				N--;
-				if (msg.getContent() != null) {
-					if (!((boolean) msg.getContent())) {
-						received++;
-					}
-				} else {
-					System.out.println("FLOODING CONTENT == NULL");
-				}
 				break;
-				
+
 			case MessageType.flooding : 
-				if (msg.getTag() == MessageType.flooding) {
-					Message newMsg = new Message(msg.getIdSrc(), msg.getIdSrc(), msg.getTag(), null, msg.getPid());
-					EDSimulator.add(0, newMsg, host, gossip_pid);
-				}
+				newMsg = new Message(msg.getIdSrc(), msg.getIdSrc(), msg.getTag(), null, msg.getPid());
 				break;
-				
+
 			case MessageType.flooding_algo3 :
-				if (msg.getTag() == MessageType.flooding_algo3) {
-					int v = nbNeighbors(host);
-					Message newMsg = new Message(msg.getIdSrc(), msg.getIdSrc(), msg.getTag(), v, msg.getPid());
-					EDSimulator.add(0, newMsg, host, gossip_pid);
-				}
+				int v = nbNeighbors(host);
+				newMsg = new Message(msg.getIdSrc(), msg.getIdSrc(), msg.getTag(), v, msg.getPid());
 				break;
-			
+
 			case MessageType.flooding_algo4 :
-				if (msg.getTag() == MessageType.flooding_algo4) {
-					System.out.println("idsource : "+msg.getIdSrc()+", host id : "+host.getID());
-					Message newMsg = new Message(msg.getIdSrc(), msg.getIdSrc(), msg.getTag(), calculateDistance(host,msg.getIdSrc()), gossip_pid);
-					EDSimulator.add(0, newMsg, host, gossip_pid);
-				}
+				newMsg = new Message(msg.getIdSrc(), msg.getIdSrc(), msg.getTag(), calculateDistance(host,msg.getIdSrc()), msg.getPid());
 				break;
-			
+
 			default :
 				System.out.println("ERROR");
 				break;
 			}
+			EDSimulator.add(0, newMsg, host, gossip_pid);
 		} else {
-			
+
 		}
 
 	}
-	
+
 	private double calculateDistance(Node host, long idSrc) {
 		PositionProtocol hostPos = null;
 		PositionProtocol nodePos = null;
 		Node node = null;
 		node = Network.get((int)idSrc);
-		
 		hostPos = (PositionProtocol) host.getProtocol(position_pid);
 		nodePos = (PositionProtocol) node.getProtocol(position_pid);
 		return hostPos.getCurrentPosition().distance(nodePos.getCurrentPosition())/(double)getScope();
-		
+
 	}
 
 	private int nbNeighbors(Node host) {
@@ -134,37 +107,21 @@ public class EmitterDecorator extends EmitterImpl implements EDProtocol {
 				hostPos = (PositionProtocol) host.getProtocol(position_pid);
 				nodePos = (PositionProtocol) node.getProtocol(position_pid);
 				if ((hostPos.getCurrentPosition().distance(nodePos.getCurrentPosition()) <= this.getScope())) { // In my
-																												// scope
+					// scope
 					cpt++;
 				}
 			}
 		}
 		return cpt;
 	}
-	
+
 
 	public void decrementN(int n) {
 		N -= n;
 	}
 
 	public int getN() {
-		return this.N;
-	}
-
-	public int getReceived() {
-		return received;
-	}
-
-	public void setReceived(int received) {
-		this.received = received;
-	}
-
-	public int getTransmited() {
-		return transmited;
-	}
-
-	public void setTransmited(int transmited) {
-		this.transmited = transmited;
+		return N;
 	}
 
 }

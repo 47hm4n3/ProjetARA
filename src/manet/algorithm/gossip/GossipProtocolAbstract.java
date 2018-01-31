@@ -6,7 +6,6 @@ public abstract class GossipProtocolAbstract implements GossipProtocol, EDProtoc
 	
 	protected static final String PAR_EMITTERPID = "emitterdecoratorprotocol";
 	
-	protected boolean initiator = false;
 	protected boolean alreadySent = false;
 	protected boolean firstRecv = false;
 	
@@ -27,10 +26,6 @@ public abstract class GossipProtocolAbstract implements GossipProtocol, EDProtoc
 
 	public void setAlreadySent(boolean alreadySent) {
 		this.alreadySent = alreadySent;
-	}
-
-	public void setInitator(boolean initator) {
-		this.initiator = initator;
 	}
 
 	public boolean getFirstRecv() {

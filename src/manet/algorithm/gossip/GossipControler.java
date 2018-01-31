@@ -42,12 +42,7 @@ public class GossipControler implements Control {
 			
 			if (((EmitterDecorator) node.getProtocol(emitterdecorator_pid)).getN() == 0) { // the previous wave has finished
 				
-				if (node != null) {
-					((GossipProtocolAbstract) node.getProtocol(gossip_pid)).setInitator(false);
-				}
-				
-				
-				if (!start) {
+			if (!start) {
 					
 					System.out.println("vague " + (waves_number - wave + 1) + " " + node.getID());
 					double d = getAtt();
@@ -82,9 +77,6 @@ public class GossipControler implements Control {
 				gpf.setFirstRecv(false);
 				gpf.setAlreadySent(false);
 			}
-			EmitterDecorator ed = ((EmitterDecorator) n.getProtocol(emitterdecorator_pid));
-			ed.setReceived(0);
-			ed.setTransmited(0);
 		}
 	}
 
@@ -114,9 +106,9 @@ public class GossipControler implements Control {
 		// ER = (r - t) / r
 		for (int i = 0; i < Network.size(); i++) {
 			Node n = Network.get(i);
-			EmitterDecorator ed = ((EmitterDecorator) n.getProtocol(emitterdecorator_pid));
-			r += ed.getReceived();
-			t += ed.getTransmited();
+			GossipProtocolAbstract gpf = ((GossipProtocolAbstract) n.getProtocol(gossip_pid));
+			r += gpf.getFirstRecv() ? 1 : 0;
+			t += gpf.getAlreadySent() ? 1 : 0;
 		}
 
 		System.out.println("r = " + r + ", t = " + t);
