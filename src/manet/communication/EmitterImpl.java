@@ -1,4 +1,4 @@
-package manet.communication;
+	package manet.communication;
 
 import manet.Message;
 import manet.positioning.PositionProtocol;
@@ -21,7 +21,6 @@ public class EmitterImpl implements Emitter {
 	private PositionProtocol nodePos = null;
 	private Node node = null;
 
-	public static Integer realN;
 	
 	public EmitterImpl(String prefix) {
 		position_pid = Configuration.getPid(prefix + "." + PAR_POSITIONPID);
@@ -39,15 +38,6 @@ public class EmitterImpl implements Emitter {
 		return this.scope;
 	}
 
-	
-	
-	public static Integer getRealN() {
-		return realN;
-	}
-
-	public void setRealN(Integer realN) {
-		this.realN = realN;
-	}
 
 	public EmitterImpl clone() {
 		try {
@@ -60,7 +50,6 @@ public class EmitterImpl implements Emitter {
 	
 	@Override
 	public void emit(Node host, Message msg) {
-		realN = 0;
 		for (int i = 0; i < Network.size(); i++) { // For all network nodes
 			node = Network.get(i);
 			if (host.getID() != node.getID()) { // Except me
@@ -68,7 +57,6 @@ public class EmitterImpl implements Emitter {
 				nodePos   = (PositionProtocol) node.getProtocol(position_pid);
 				if ((hostPos.getCurrentPosition().distance(nodePos.getCurrentPosition()) <= this.getScope())) { // In my scope
 					EDSimulator.add(this.getLatency(), msg, node, msg.getPid()); // Send()
-					realN ++;
 				}
 			}
 		}

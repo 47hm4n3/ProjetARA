@@ -6,6 +6,7 @@ import java.util.List;
 import manet.Message;
 import manet.communication.EmitterImpl;
 import peersim.config.Configuration;
+import peersim.core.Network;
 import peersim.core.Node;
 import peersim.edsim.EDProtocol;
 import peersim.edsim.EDSimulator;
@@ -22,8 +23,9 @@ public class NeighborProtocolImpl implements NeighborProtocol, EDProtocol {
 	private final long period;
 	private final long delta;
 	private List<Long> neighbours;
-	private List<Long> periodN;
-	private Message msg;
+	private int[] timer; //chaque noeud a pour chacun de ses voisins un timer associé
+	private Message msgReceived;
+	private Message msgToSend;
 	
 	public NeighborProtocolImpl(String prefix) {
 		String tmp[] = prefix.split("\\.");
@@ -49,7 +51,10 @@ public class NeighborProtocolImpl implements NeighborProtocol, EDProtocol {
 	public NeighborProtocolImpl clone() {
 		try {
 			neighbours = new ArrayList<Long>();
-			periodN = new ArrayList<Long>();
+			timer = new int[Network.size()];
+			for(int i=0;i<Network.size();i++) {
+				timer[i]=0;
+			}
 			return (NeighborProtocolImpl) super.clone();
 		} catch (Exception e) {
 			System.out.println("Cloning NeighborProtocolImpl Failed !");
@@ -59,35 +64,47 @@ public class NeighborProtocolImpl implements NeighborProtocol, EDProtocol {
 
 	@Override
 	public void processEvent(Node host, int pid, Object event) {
+		
 		if (neighbour_pid != pid) {
 			throw new RuntimeException("Receive Event for wrong protocol");
 		}
-		if (event instanceof String) {
-			msg = new Message(host.getID(), -1, "", MessageType.probe, neighbour_pid);
-			switch ((String) event) {
+		
+		if (event instanceof Message) {
+			
+			msgReceived = (Message) event;
+			
+			//System.out.println("ID "+host.getID()+" recoit un message de type "+msgReceived.getTag());
+			
+			long idSrc = msgReceived.getIdSrc();
+			
+			switch(msgReceived.getTag()) {
+			
 			case MessageType.probe:
-				((EmitterImpl) host.getProtocol(emitter_pid)).emit(host, msg);
-				EDSimulator.add(period, MessageType.probe, host, neighbour_pid);
+				idSrc = host.getID();
+				msgToSend = new Message(idSrc, -1, MessageType.heartbeat, host, neighbour_pid);
+				((EmitterImpl) host.getProtocol(emitter_pid)).emit(host, msgToSend);
+				EDSimulator.add(period, new Message(idSrc,-1,MessageType.probe,host,neighbour_pid), host, neighbour_pid);
 				break;
+				
 			case MessageType.timer:
-				for (int i = 0; i < neighbours.size(); i++) {
-					if (!periodN.contains(neighbours.get(i))) {
-						neighbours.remove(i);
-					}
-				}
-				periodN.clear();
-				EDSimulator.add(delta, MessageType.timer, host, neighbour_pid);
+				int newTimer = timer[(int)idSrc]-1; 
+				timer[(int)idSrc]=newTimer;
+				if(newTimer == 0) 
+					neighbours.remove(idSrc);
 				break;
+				
+			case MessageType.heartbeat:
+				if (!neighbours.contains(idSrc)) {
+					neighbours.add(idSrc);
+				}
+				timer[(int)idSrc]++;
+				msgToSend = new Message(idSrc, -1, MessageType.timer, host, neighbour_pid);
+				EDSimulator.add(delta, msgToSend, host, neighbour_pid);
+				break;
+				
 			default:
 				break;
-			}
-		} else if (event instanceof Message) {
-			long id = ((Message) event).getIdSrc();
-			if (!periodN.contains(id)) {
-				periodN.add(id);
-			}
-			if (!neighbours.contains(id)) {
-				neighbours.add(id);
+				
 			}
 			
 		} else {

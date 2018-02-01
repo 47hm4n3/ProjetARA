@@ -13,47 +13,56 @@ public class DensityController implements Control{
 	private static final String PAR_NEIGHBORPID = "neighborprotocol";
 
 	private int neighbour_pid;
-	private NeighborProtocolImpl neighbourProt;
+	private NeighborProtocolImpl []neighbourProt;
 	private List<Double> densities;
 	private List<Double> standardDeviations;
+	private int SIZE;
 	
 	public DensityController(String prefix) {
 		neighbour_pid = Configuration.getPid(prefix+"."+PAR_NEIGHBORPID);
 		densities = new ArrayList<Double>();
 		standardDeviations  = new ArrayList<Double>();
+		this.SIZE = Network.size();
+		neighbourProt = new NeighborProtocolImpl[SIZE];
+		for(int i = 0; i < SIZE; i++) 
+			neighbourProt[i] = (NeighborProtocolImpl)Network.get(i).getProtocol(neighbour_pid);
+		
 	}
 
 	@Override
 	public boolean execute() {
 		densities.add(getDensity());
-		standardDeviations.add(getStandardDeviation());
+		double averageDensity = getAverageDensity();
+		double standardDeviation = getStandardDeviation();
+		standardDeviations.add(standardDeviation);
 		//System.out.println("----------- Density "+getDensity());
 		//System.out.println("----------- StandardDeviation "+getStandardDeviation());
 		//System.out.println("----------- AverageDensity "+getAverageDensity());
 		//System.out.println("----------- AverageStandardDeviation "+getAverageStandardDeviation());
 		//System.out.println("----------- DensityStandardDeviation "+getDensityStandardDeviation());
 		//System.out.println("-------------------------------");
-		System.out.println("----------- D "+getAverageDensity());
-		System.out.println("----------- E/D "+getStandardDeviation()/getAverageDensity());
-		System.out.println("----------- ED/D "+getDensityStandardDeviation()/getAverageDensity());
+		
+		
+		
+		System.out.println("----------- D "+averageDensity);
+		System.out.println("----------- E/D "+standardDeviation/averageDensity);
+		System.out.println("----------- ED/D "+getDensityStandardDeviation()/averageDensity);
 		return false;
 	}
 
 	public double getDensity() {
 		double sum = 0;
-		for(int i = 0; i < Network.size(); i++) {
-			neighbourProt = (NeighborProtocolImpl)Network.get(i).getProtocol(neighbour_pid);
-			sum += neighbourProt.getNeighbors().size();
+		for(int i = 0; i < SIZE; i++) {
+			sum += neighbourProt[i].getNeighbors().size();
 		}
 		return sum/Network.size();
 	}
 	
 	public double getStandardDeviation() {
-		double density = getDensity();
+		double density = densities.get(densities.size()-1); // on le calcule � la premi�re instruction de la m�thode execute()
 		double sum = 0;
-		for (int i = 0; i < Network.size(); i++) {
-			neighbourProt = (NeighborProtocolImpl)Network.get(i).getProtocol(neighbour_pid);
-			 sum += Math.pow(((double)neighbourProt.getNeighbors().size() - density),2) ;
+		for (int i = 0; i < SIZE; i++) {
+			 sum += Math.pow(((double)neighbourProt[i].getNeighbors().size() - density),2) ;
 		}
 		return Math.sqrt(sum/Network.size());
 	}

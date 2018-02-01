@@ -4,9 +4,10 @@ import peersim.edsim.EDProtocol;
 
 public abstract class GossipProtocolAbstract implements GossipProtocol, EDProtocol{
 	
-	protected boolean firstTime = true;
-	protected int received = 0;
-	protected int transmited = 0;
+	protected static final String PAR_EMITTERPID = "emitterdecoratorprotocol";
+	
+	protected boolean alreadySent = false;
+	protected boolean firstRecv = false;
 	
 	
 	public GossipProtocolAbstract clone () {
@@ -18,29 +19,23 @@ public abstract class GossipProtocolAbstract implements GossipProtocol, EDProtoc
 		return null;
 	}
 	
-	public boolean getFirstTime() {
-		return firstTime;
+	
+	public boolean getAlreadySent() {
+		return alreadySent;
 	}
 
-	public void setFirstTime(boolean firstTime) {
-		this.firstTime = firstTime;
+	public void setAlreadySent(boolean alreadySent) {
+		this.alreadySent = alreadySent;
 	}
 
-	public int getReceived() {
-		return received;
+	public boolean getFirstRecv() {
+		return firstRecv;
 	}
 
-	public void setReceived(int received) {
-		this.received = received;
-	}
-
-	public int getTransmited() {
-		return transmited;
-	}
-
-	public void setTransmited(int transmited) {
-		this.transmited = transmited;
+	public void setFirstRecv(boolean firstRecv) {
+		this.firstRecv = firstRecv;
 	}
 	
 	
+
 }
