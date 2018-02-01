@@ -37,11 +37,11 @@ public class GossipProtocolDistance extends GossipProtocolAbstract {
 				firstRecv = true;
 				Message m = (Message) event;
 				proba = (double) m.getContent();
-
+				Message newMsg = new Message(host.getID(), m.getIdDest(), m.getTag(), m.getContent(), m.getPid());
 				double rdm = CommonState.r.nextDouble();
 				System.out.println(host.getID() + " PROBA " + proba + ", rdm = " + rdm);
 				if (rdm < proba) {
-					((EmitterDecorator) host.getProtocol(emitterdecorator_pid)).emit(host, m);
+					((EmitterDecorator) host.getProtocol(emitterdecorator_pid)).emit(host, newMsg);
 					alreadySent = true;
 				} else {
 					cpt++;

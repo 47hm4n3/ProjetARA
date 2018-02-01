@@ -41,9 +41,9 @@ public class GossipProtocolFlooding extends GossipProtocolAbstract {
 			if (!firstRecv) {
 				firstRecv = true;
 				Message m = (Message) event;
-
+				Message newMsg = new Message(host.getID(), m.getIdDest(), m.getTag(), m.getContent(), m.getPid());
 				if (CommonState.r.nextDouble() < proba) {
-					((EmitterDecorator) host.getProtocol(emitterdecorator_pid)).emit(host, m);
+					((EmitterDecorator) host.getProtocol(emitterdecorator_pid)).emit(host, newMsg);
 					alreadySent = true;
 				}
 			}

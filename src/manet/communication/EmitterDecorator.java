@@ -66,12 +66,11 @@ public class EmitterDecorator extends EmitterImpl implements EDProtocol {
 				break;
 
 			case MessageType.flooding_algo3 :
-				int v = nbNeighbors(host);
-				newMsg = new Message(msg.getIdSrc(), msg.getIdSrc(), msg.getTag(), v, msg.getPid());
+				newMsg = new Message(msg.getIdSrc(), msg.getIdSrc(), msg.getTag(), nbNeighbors(host), msg.getPid());
 				break;
 
 			case MessageType.flooding_algo4 :
-				newMsg = new Message(msg.getIdSrc(), msg.getIdSrc(), msg.getTag(), calculateDistance(host,msg.getIdSrc()), msg.getPid());
+				newMsg = new Message(msg.getIdSrc(), msg.getIdSrc(), msg.getTag(), calculateProbability(host,msg.getIdSrc()), msg.getPid());
 				break;
 
 			default :
@@ -82,17 +81,18 @@ public class EmitterDecorator extends EmitterImpl implements EDProtocol {
 		} else {
 
 		}
-
 	}
 
-	private double calculateDistance(Node host, long idSrc) {
+	private double calculateProbability(Node host, long idSrc) {
 		PositionProtocol hostPos = null;
 		PositionProtocol nodePos = null;
 		Node node = null;
 		node = Network.get((int)idSrc);
 		hostPos = (PositionProtocol) host.getProtocol(position_pid);
 		nodePos = (PositionProtocol) node.getProtocol(position_pid);
-		return hostPos.getCurrentPosition().distance(nodePos.getCurrentPosition())/(double)getScope();
+		double p = hostPos.getCurrentPosition().distance(nodePos.getCurrentPosition())/(double)getScope();
+		System.out.println(host.getID() + " PROBA_Distance = " + p);
+		return p;
 
 	}
 
@@ -114,7 +114,6 @@ public class EmitterDecorator extends EmitterImpl implements EDProtocol {
 		}
 		return cpt;
 	}
-
 
 	public void decrementN(int n) {
 		N -= n;
