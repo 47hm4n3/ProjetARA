@@ -1,6 +1,5 @@
 package manet.communication;
 
-
 import manet.Message;
 import manet.positioning.PositionProtocol;
 import peersim.config.Configuration;
@@ -14,16 +13,20 @@ public class EmitterDecorator extends EmitterImpl implements EDProtocol {
 
 	private static final String PAR_POSITIONPID = "positionprotocol";
 	private static final String PAR_GOSSIPPID = "gossipprotocol";
+	private static final String PAR_K = "k";
 
 	private final int gossip_pid;
 	private final int position_pid;
-
+	private final int k;
+	
 	private static Integer N;
 
 	public EmitterDecorator(String prefix) {
 		super(prefix);
 		position_pid = Configuration.getPid(prefix + "." + PAR_POSITIONPID);
 		gossip_pid = Configuration.getPid(prefix + "." + PAR_GOSSIPPID);
+		k = Configuration.getInt(prefix + "." + PAR_K);
+
 		N = 0;
 	}
 
@@ -63,33 +66,34 @@ public class EmitterDecorator extends EmitterImpl implements EDProtocol {
 
 			case MessageType.flooding : 
 				newMsg = new Message(msg.getIdSrc(), msg.getIdSrc(), msg.getTag(), null, msg.getPid());
+				EDSimulator.add(0, newMsg, host, gossip_pid);
 				break;
 
 			case MessageType.flooding_algo3 :
-				newMsg = new Message(msg.getIdSrc(), msg.getIdSrc(), msg.getTag(), nbNeighbors(host), msg.getPid());
+				newMsg = new Message(msg.getIdSrc(), msg.getIdSrc(), msg.getTag(), ((double)k)/((double)nbNeighbors(host)), msg.getPid());
+				EDSimulator.add(0, newMsg, host, gossip_pid);
 				break;
 
 			case MessageType.flooding_algo4 :
 				newMsg = new Message(msg.getIdSrc(), msg.getIdSrc(), msg.getTag(), calculateProbability(host,msg.getIdSrc()), msg.getPid());
+				EDSimulator.add(0, newMsg, host, gossip_pid);
 				break;
 
 			default :
 				System.out.println("ERROR");
 				break;
 			}
-			EDSimulator.add(0, newMsg, host, gossip_pid);
+			
 		} else {
 
 		}
 	}
 
 	private double calculateProbability(Node host, long idSrc) {
-		PositionProtocol hostPos = null;
-		PositionProtocol nodePos = null;
 		Node node = null;
 		node = Network.get((int)idSrc);
-		hostPos = (PositionProtocol) host.getProtocol(position_pid);
-		nodePos = (PositionProtocol) node.getProtocol(position_pid);
+		PositionProtocol hostPos = (PositionProtocol) host.getProtocol(position_pid);
+		PositionProtocol nodePos = (PositionProtocol) node.getProtocol(position_pid);
 		double p = hostPos.getCurrentPosition().distance(nodePos.getCurrentPosition())/(double)getScope();
 		System.out.println(host.getID() + " PROBA_Distance = " + p);
 		return p;

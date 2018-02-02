@@ -18,7 +18,7 @@ public class GossipProtocolK extends GossipProtocolAbstract {
 	
 	public GossipProtocolK(String prefix) {
 		emitterdecorator_pid = Configuration.getPid(prefix + "." + PAR_EMITTERPID);
-		k = Configuration.getInt(prefix + "." + PAR_K);
+	k = Configuration.getInt(prefix + "." + PAR_K);
 	}
 	
 	@Override
@@ -39,7 +39,7 @@ public class GossipProtocolK extends GossipProtocolAbstract {
 				firstRecv = true;
 			Message m = (Message) event;
 			Message newMsg = new Message(host.getID(), m.getIdDest(), m.getTag(), m.getContent(), m.getPid());
-				prob = ((double)k)/((int)m.getContent());
+				prob = (double)m.getContent();
 				System.out.println(host.getID() + " PROBA_K = " + prob);
 				if (CommonState.r.nextDouble() < prob) {
 					((EmitterDecorator) host.getProtocol(emitterdecorator_pid)).emit(host, newMsg);
@@ -47,8 +47,7 @@ public class GossipProtocolK extends GossipProtocolAbstract {
 				}
 			}
 			EDSimulator.add(0, msg, host, emitterdecorator_pid); // Decremente reception
-		}
-		
+		}	
 	}
 
 }
