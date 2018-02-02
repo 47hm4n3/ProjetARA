@@ -4,6 +4,7 @@ bin/*
 
 # Log file
 *.log
+.classpath
 
 # BlueJ files
 *.ctxt

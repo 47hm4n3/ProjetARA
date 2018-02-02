@@ -10,15 +10,12 @@ import utils.MessageType;
 
 public class GossipProtocolK extends GossipProtocolAbstract {
 	
-	private static final String PAR_K = "k";
 	
 	private final int emitterdecorator_pid;
-	private final int k;
 	private double prob;
 	
 	public GossipProtocolK(String prefix) {
 		emitterdecorator_pid = Configuration.getPid(prefix + "." + PAR_EMITTERPID);
-	k = Configuration.getInt(prefix + "." + PAR_K);
 	}
 	
 	@Override
