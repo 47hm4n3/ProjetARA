@@ -77,6 +77,7 @@ public class GossipControler implements Control {
 				gpf.setFirstRecv(false);
 				gpf.setAlreadySent(false);
 			}
+			gpf.setTimerArmed(false);
 		}
 	}
 

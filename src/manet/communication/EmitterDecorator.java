@@ -1,5 +1,7 @@
 package manet.communication;
 
+import java.util.ArrayList;
+
 import manet.Message;
 import manet.positioning.PositionProtocol;
 import peersim.config.Configuration;
@@ -8,6 +10,7 @@ import peersim.core.Node;
 import peersim.edsim.EDProtocol;
 import peersim.edsim.EDSimulator;
 import utils.MessageType;
+import utils.DataProtoProba;
 
 public class EmitterDecorator extends EmitterImpl implements EDProtocol {
 
@@ -78,7 +81,21 @@ public class EmitterDecorator extends EmitterImpl implements EDProtocol {
 				newMsg = new Message(msg.getIdSrc(), msg.getIdSrc(), msg.getTag(), calculateProbability(host,msg.getIdSrc()), msg.getPid());
 				EDSimulator.add(0, newMsg, host, gossip_pid);
 				break;
-
+				
+			case MessageType.flooding_algo3_algo8 :
+				System.out.println("AVANT - EMITTER DECORATEUR");
+			
+				((ArrayList<Long>)msg.getContent()).stream().forEach(e->System.out.println(e));
+				System.out.println("APRES - EMITTER DECORATEUR");
+				DataProtoProba d = new DataProtoProba((ArrayList<Long>)msg.getContent(),((double)k)/((double)nbNeighbors(host)));
+				newMsg = new Message(msg.getIdSrc(), msg.getIdSrc(), msg.getTag(), d, msg.getPid());
+				EDSimulator.add(0, newMsg, host, gossip_pid);
+				break;
+				
+			case MessageType.flooding_algo4_algo8 :
+				newMsg = new Message(msg.getIdSrc(), msg.getIdSrc(), msg.getTag(), calculateProbability(host,msg.getIdSrc()), msg.getPid());
+				EDSimulator.add(0, newMsg, host, gossip_pid);
+				break;
 			default :
 				System.out.println("ERROR");
 				break;
