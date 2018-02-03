@@ -1,4 +1,4 @@
-	package manet.communication;
+package manet.communication;
 
 import manet.Message;
 import manet.positioning.PositionProtocol;
