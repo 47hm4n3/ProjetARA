@@ -49,8 +49,8 @@ public class GossipProtocolQ8 extends GossipProtocolAbstract {
 		alreadySent = true; 
 		firstRecv = true;
 		System.out.println(host.getID()+" JE SUIS LE INIT, MES VOISINS SONT : ");
-		getNeighbors(host).stream().forEach(e->System.out.println(e));
-		Message msg = new Message(host.getID(), -1, MessageType.flooding_algo3_algo8,getNeighbors(host), emitterdecorator_pid); // tag == flooding
+		System.out.println(getNeighbors(host));
+		Message msg = new Message(host.getID(), -1, MessageType.flooding_algo3_algo8, getNeighbors(host), emitterdecorator_pid); // tag == flooding
 		((EmitterDecorator) host.getProtocol(emitterdecorator_pid)).emit(host, msg); // emit
 	}
 
@@ -67,28 +67,28 @@ public class GossipProtocolQ8 extends GossipProtocolAbstract {
 					
 					System.out.println(host.getID()+ " JAI RECU DE MON VOISIN ID : "+m.getIdSrc());
 					ArrayList<Long> l = (ArrayList<Long>)((DataProtoProba)m.getContent()).getL();
-					l.stream().forEach(e->System.out.println(e));
+					System.out.println(l);
 					
 					nodeList.removeAll(l);
 
 					System.out.println(host.getID()+ " MA LISTE NEW LX");
-					nodeList.stream().forEach(e->System.out.println(e));
+					System.out.println(nodeList);
 					return;
 				}
 				if(!firstRecv) {
 					nodeList = getNeighbors(host);
 
 					System.out.println(host.getID()+ " MA LISTE DE VOISINS");
-					nodeList.stream().forEach(e->System.out.println(e));
+					System.out.println(nodeList);
 
 					System.out.println(host.getID()+ " JAI RECU DE MON VOISIN ID : "+m.getIdSrc());
 					ArrayList<Long> l = (ArrayList<Long>)((DataProtoProba)m.getContent()).getL();
-					l.stream().forEach(e->System.out.println(e));
+					System.out.println(l);
 
 					nodeList.removeAll(l);
 
 					System.out.println(host.getID()+ " MA LISTE LX");
-					nodeList.stream().forEach(e->System.out.println(e));
+					System.out.println(nodeList);
 
 					firstRecv = true;
 					Message newMsg = new Message(host.getID(), m.getIdDest(), m.getTag(), nodeList, m.getPid());

@@ -84,8 +84,7 @@ public class EmitterDecorator extends EmitterImpl implements EDProtocol {
 				
 			case MessageType.flooding_algo3_algo8 :
 				System.out.println("AVANT - EMITTER DECORATEUR");
-			
-				((ArrayList<Long>)msg.getContent()).stream().forEach(e->System.out.println(e));
+				System.out.println(msg.getContent());
 				System.out.println("APRES - EMITTER DECORATEUR");
 				DataProtoProba d = new DataProtoProba((ArrayList<Long>)msg.getContent(),((double)k)/((double)nbNeighbors(host)));
 				newMsg = new Message(msg.getIdSrc(), msg.getIdSrc(), msg.getTag(), d, msg.getPid());
