@@ -50,8 +50,8 @@ public class EmitterDecorator extends EmitterImpl implements EDProtocol {
 	@Override
 	public void emit(Node host, Message msg) {
 
-		Message newMsg = new Message(msg.getIdSrc(), msg.getIdDest(), msg.getTag(), null, msg.getPid());
-		super.emit(host, newMsg);
+		//Message newMsg = new Message(msg.getIdSrc(), msg.getIdDest(), msg.getTag(), null, msg.getPid());
+		super.emit(host, msg);
 		N += nbNeighbors(host);
 
 	}

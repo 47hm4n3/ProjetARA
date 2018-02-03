@@ -99,7 +99,7 @@ public class GossipProtocolQ8 extends GossipProtocolAbstract {
 						alreadySent = true;
 					}else {
 						isTimerArmed = true;
-						int timer = (CommonState.r.nextInt()*(tmax-tmin))+tmin;
+						int timer = (int)(CommonState.r.nextDouble() * (tmax - tmin)) + tmin;
 						System.out.println(host.getID()+ " JAI CHOISIS TIMER : "+timer);
 						Message tm = new Message(host.getID(), host.getID(), MessageType.timer_algo8, null, my_pid);
 						EDSimulator.add(timer,tm,host,my_pid);
