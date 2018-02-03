@@ -13,6 +13,7 @@ public class GossipProtocolDistance extends GossipProtocolAbstract {
 	private final int emitterdecorator_pid;
 	private double proba;
 	static Integer cpt = 0;
+	
 
 	public GossipProtocolDistance(String prefix) {
 		emitterdecorator_pid = Configuration.getPid(prefix + "." + PAR_EMITTERPID);
@@ -22,7 +23,6 @@ public class GossipProtocolDistance extends GossipProtocolAbstract {
 	public void initiateGossip(Node host, int id, long id_initiator) {
 		alreadySent = true;
 		firstRecv = true;
-		System.out.println(host.getID() + " est initateur");
 		Message msg = new Message(host.getID(), -1, MessageType.flooding_algo4, null, emitterdecorator_pid); // tag
 																													// ==
 		((EmitterDecorator) host.getProtocol(emitterdecorator_pid)).emit(host, msg); // emit
@@ -39,13 +39,11 @@ public class GossipProtocolDistance extends GossipProtocolAbstract {
 				proba = (double) m.getContent();
 				Message newMsg = new Message(host.getID(), m.getIdDest(), m.getTag(), m.getContent(), m.getPid());
 				double rdm = CommonState.r.nextDouble();
-				System.out.println(host.getID() + " PROBA " + proba + ", rdm = " + rdm);
 				if (rdm < proba) {
 					((EmitterDecorator) host.getProtocol(emitterdecorator_pid)).emit(host, newMsg);
 					alreadySent = true;
 				} else {
 					cpt++;
-					System.out.println(host.getID() + " ne retransmet pas " + cpt);
 				}
 			}
 			EDSimulator.add(0, msg, host, emitterdecorator_pid); // Decremente

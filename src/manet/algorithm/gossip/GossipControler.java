@@ -42,17 +42,15 @@ public class GossipControler implements Control {
 			
 			if (((EmitterDecorator) node.getProtocol(emitterdecorator_pid)).getN() == 0) { // the previous wave has finished
 				
+				
 			if (!start) {
 					
-					System.out.println("vague " + (waves_number - wave + 1) + " " + node.getID());
+					//System.out.println("vague " + (waves_number - wave + 1) + " " + node.getID());
 					double d = getAtt();
-					System.out.println("atteignabilité = " + d);
 					atts.add(d); // calculate and save this wave's Att
 					ERs.add(getER()); // calculate and save this wave's ER
-					// System.out.println("ER = "+getER());
 					wave--; // decrement number of remaining waves
 					resetStates();
-					
 				}
 				initialize(); // Pick a new node to broadcast
 				((GossipProtocolAbstract) node.getProtocol(gossip_pid)).initiateGossip(node, wave, node.getID()); // initiate a new wave
@@ -65,7 +63,6 @@ public class GossipControler implements Control {
 			System.out.println("Ecart type ER : " + getERStandardDeviation());
 			return true;
 		}
-		// System.out.println("ALLO"+atts.size());
 		return false;
 	}
 	
@@ -77,7 +74,7 @@ public class GossipControler implements Control {
 				gpf.setFirstRecv(false);
 				gpf.setAlreadySent(false);
 			}
-			gpf.setTimerArmed(false);
+			gpf.setTimerArmed(0);
 		}
 	}
 
@@ -93,18 +90,12 @@ public class GossipControler implements Control {
 
 		}
 
-		System.out.println();
-		System.out.println("nbAtt = " + nbAtt);
-
 		return nbAtt / ((double) Network.size());
 	}
 
 	public double getER() {
 		double r = 0;
 		double t = 0;
-		// Nombre de noeuds ayant recu r
-		// Nombre de noeuds ayant transmis t
-		// ER = (r - t) / r
 		for (int i = 0; i < Network.size(); i++) {
 			Node n = Network.get(i);
 			GossipProtocolAbstract gpf = ((GossipProtocolAbstract) n.getProtocol(gossip_pid));
@@ -112,45 +103,29 @@ public class GossipControler implements Control {
 			t += gpf.getAlreadySent() ? 1 : 0;
 		}
 
-		System.out.println("r = " + r + ", t = " + t);
-
 		return (r - t) / r;
 	}
 	
 
 	public double getAverageAtt() {
-		double sum = 0;
-		for (int i = 0; i < atts.size(); i++) {
-			sum += atts.get(i);
-		}
-
-		return sum / atts.size();
+		return atts.stream().reduce((e1,e2)->e1+e2).get()/atts.size();
 	}
 
 	public double getAverageER() {
-		double sum = 0;
-		for (int i = 0; i < ERs.size(); i++) {
-			sum += ERs.get(i);
-		}
-		return sum / ERs.size();
+		return ERs.stream().reduce((e1,e2)->e1+e2).get()/ERs.size();
 	}
 
 	public double getAttStandardDeviation() {
-		double sum = 0;
+
 		double num = getAverageAtt();
-		for (int i = 0; i < atts.size(); i++) {
-			sum += Math.pow((atts.get(i) - num), 2);
-		}
-		return Math.sqrt(sum / atts.size());
+		return Math.sqrt(atts.parallelStream().map(e->Math.pow((e - num), 2)).reduce((e1,e2)->e1+e2).get()/atts.size());
 	}
 
 	public double getERStandardDeviation() {
-		double sum = 0;
+
 		double num = getAverageER();
-		for (int i = 0; i < ERs.size(); i++) {
-			sum += Math.pow((ERs.get(i) - num), 2);
-		}
-		return Math.sqrt(sum / ERs.size());
+		return Math.sqrt(ERs.parallelStream().map(e->Math.pow((e - num), 2)).reduce((e1,e2)->e1+e2).get()/ERs.size());
+		
 	}
 
 	private void initialize() {
