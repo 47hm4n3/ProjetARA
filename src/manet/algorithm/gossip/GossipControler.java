@@ -1,6 +1,7 @@
 package manet.algorithm.gossip;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 import manet.communication.EmitterDecorator;
@@ -42,6 +43,7 @@ public class GossipControler implements Control {
 			
 			if (((EmitterDecorator) node.getProtocol(emitterdecorator_pid)).getN() == 0) { // the previous wave has finished
 				
+				
 			if (!start) {
 					
 					System.out.println("vague " + (waves_number - wave + 1) + " " + node.getID());
@@ -77,7 +79,7 @@ public class GossipControler implements Control {
 				gpf.setFirstRecv(false);
 				gpf.setAlreadySent(false);
 			}
-			gpf.setTimerArmed(false);
+			gpf.setTimerArmed(0);
 		}
 	}
 
@@ -123,7 +125,6 @@ public class GossipControler implements Control {
 		for (int i = 0; i < atts.size(); i++) {
 			sum += atts.get(i);
 		}
-
 		return sum / atts.size();
 	}
 

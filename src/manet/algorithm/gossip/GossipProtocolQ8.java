@@ -16,6 +16,7 @@ public class GossipProtocolQ8 extends GossipProtocolAbstract {
 	protected static final String PAR_NEIGHBORPID = "neighborprotocol";
 	protected static final String PAR_TMIN = "tmin";
 	protected static final String PAR_TMAX = "tmax";
+	protected static final String PAR_START ="strat";
 
 	private final int emitterdecorator_pid;
 	private final int neighborProtocol_pid;
@@ -23,6 +24,7 @@ public class GossipProtocolQ8 extends GossipProtocolAbstract {
 	private double prob;
 	private final int tmin;
 	private final int tmax;
+	private final int strat;
 	
 	
 	
@@ -35,6 +37,12 @@ public class GossipProtocolQ8 extends GossipProtocolAbstract {
 		neighborProtocol_pid = Configuration.getPid(prefix + "." + PAR_NEIGHBORPID);
 		tmin = Configuration.getInt(prefix+"."+PAR_TMIN);
 		tmax = Configuration.getInt(prefix+"."+PAR_TMAX);
+		strat = Configuration.getInt(prefix+"."+PAR_START);
+		
+		if(strat != 3 && strat !=4) {
+			System.err.println("ERREUR STRAT DIFFERENT DE 3 ET 4");
+			System.exit(-1);
+		}
 		
 	}
 
@@ -46,84 +54,97 @@ public class GossipProtocolQ8 extends GossipProtocolAbstract {
 
 	@Override
 	public void initiateGossip(Node host, int id, long id_initiator) {
+		System.out.println(id_initiator+" INITE");
 		alreadySent = true; 
 		firstRecv = true;
-		System.out.println(host.getID()+" JE SUIS LE INIT, MES VOISINS SONT : ");
-		System.out.println(getNeighbors(host));
-		Message msg = new Message(host.getID(), -1, MessageType.flooding_algo3_algo8, getNeighbors(host), emitterdecorator_pid); // tag == flooding
-		((EmitterDecorator) host.getProtocol(emitterdecorator_pid)).emit(host, msg); // emit
+		isTimerArmed = 0;
+		Message msg = null;
+		DataProtoProba d = new DataProtoProba(getNeighbors(host),-1);
+		switch(strat) {
+		case 3 : msg = new Message(host.getID(), -1, MessageType.flooding_algo3_algo8, d, emitterdecorator_pid); // tag == flooding
+			break;
+			
+		case 4 : msg = new Message(host.getID(), -1, MessageType.flooding_algo4_algo8, d, emitterdecorator_pid); // tag == flooding
+			break;
+		default :
+			System.exit(-1);
+		}
+		((EmitterDecorator) host.getProtocol(emitterdecorator_pid)).emit(host, msg);
 	}
 
 	@Override
 	public void processEvent(Node host, int pid, Object event) {
 
 		if (event instanceof Message) {
+			
 			Message msg = new Message(host.getID(), host.getID(), MessageType.decrement, firstRecv,
 					emitterdecorator_pid);
 			Message m = (Message) event;
 			switch(m.getTag()) {
-			case MessageType.flooding_algo3_algo8 : 
-				if(isTimerArmed) {
+			case MessageType.flooding_algo4_algo8:
+			case MessageType.flooding_algo3_algo8: 
+				if(isTimerArmed==1) {
+					// QUAND ON RECOIT DES MESSAGES PENDANT LE TIMER
 					
-					System.out.println(host.getID()+ " JAI RECU DE MON VOISIN ID : "+m.getIdSrc());
 					ArrayList<Long> l = (ArrayList<Long>)((DataProtoProba)m.getContent()).getL();
-					System.out.println(l);
-					
 					nodeList.removeAll(l);
-
-					System.out.println(host.getID()+ " MA LISTE NEW LX");
-					System.out.println(nodeList);
-					return;
 				}
+				
 				if(!firstRecv) {
+					
 					nodeList = getNeighbors(host);
-
-					System.out.println(host.getID()+ " MA LISTE DE VOISINS");
-					System.out.println(nodeList);
-
-					System.out.println(host.getID()+ " JAI RECU DE MON VOISIN ID : "+m.getIdSrc());
 					ArrayList<Long> l = (ArrayList<Long>)((DataProtoProba)m.getContent()).getL();
-					System.out.println(l);
-
+					//System.out.println(host.getID()+" Mes voisins : "+nodeList);
+					//System.out.println(host.getID()+" Je reçois : "+l);
 					nodeList.removeAll(l);
-
-					System.out.println(host.getID()+ " MA LISTE LX");
-					System.out.println(nodeList);
-
+					//System.out.println(host.getID()+" nodeList : "+nodeList);
 					firstRecv = true;
-					Message newMsg = new Message(host.getID(), m.getIdDest(), m.getTag(), nodeList, m.getPid());
+					DataProtoProba d = new DataProtoProba(getNeighbors(host),-1);
+					Message newMsg = new Message(host.getID(), -1, MessageType.flooding_algo3_algo8, d, emitterdecorator_pid); // tag == flooding
 					prob =  (double)((DataProtoProba)m.getContent()).getProba();
-					System.out.println(host.getID() + " PROBA_K = " + prob);
 					if (CommonState.r.nextDouble() < prob) {
 						((EmitterDecorator) host.getProtocol(emitterdecorator_pid)).emit(host, newMsg);
 						alreadySent = true;
 					}else {
-						isTimerArmed = true;
-						int timer = (CommonState.r.nextInt()*(tmax-tmin))+tmin;
-						System.out.println(host.getID()+ " JAI CHOISIS TIMER : "+timer);
+						isTimerArmed ++;
+						double timer = (CommonState.r.nextDouble()*(tmax-tmin))+tmin;
 						Message tm = new Message(host.getID(), host.getID(), MessageType.timer_algo8, null, my_pid);
-						EDSimulator.add(timer,tm,host,my_pid);
+						EDSimulator.add((int)timer,tm,host,my_pid);
+						return;
 					}
+					
 				}
 				EDSimulator.add(0, msg, host, emitterdecorator_pid); // Decremente reception
 				break;
 			case MessageType.timer_algo8 :
-				if(nodeList.size()!=0) {
-					Message newMsg = new Message(host.getID(), m.getIdDest(), m.getTag(), nodeList, m.getPid());
+				if(!nodeList.isEmpty()) {
+					Message newMsg = null;
+					DataProtoProba d = new DataProtoProba(getNeighbors(host),-1);
+					switch(strat) {
+					case 3 : newMsg = new Message(host.getID(), -1, MessageType.flooding_algo3_algo8, d, emitterdecorator_pid); // tag == flooding
+						break;
+					case 4 : newMsg = new Message(host.getID(), -1, MessageType.flooding_algo4_algo8, d, emitterdecorator_pid); // tag == flooding
+						break;
+					default :
+						System.exit(-1);
+					}
 					((EmitterDecorator) host.getProtocol(emitterdecorator_pid)).emit(host, newMsg);
+					alreadySent = true;
 				}
+				EDSimulator.add(0, msg, host, emitterdecorator_pid);
+
+				isTimerArmed ++;
 				break;
 			default :
-				System.out.println("ERROR MESSAGE GOSSIPALGO8");
-				break;
+				System.out.println("ERROR MESSAGE GOSSIP ALGO 8");
+				System.exit(-1);
 			}
-
-		}	
+		}
 	}
 
 	private ArrayList<Long> getNeighbors(Node host){
 		NeighborProtocolImpl NB = (NeighborProtocolImpl) host.getProtocol(neighborProtocol_pid);
-		return (ArrayList<Long>) NB.getNeighbors();
+		return (ArrayList<Long>) ((ArrayList<Long>) NB.getNeighbors()).clone();
 	}
 
 }

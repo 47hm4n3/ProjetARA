@@ -13,6 +13,7 @@ public class GossipProtocolDistance extends GossipProtocolAbstract {
 	private final int emitterdecorator_pid;
 	private double proba;
 	static Integer cpt = 0;
+	
 
 	public GossipProtocolDistance(String prefix) {
 		emitterdecorator_pid = Configuration.getPid(prefix + "." + PAR_EMITTERPID);
