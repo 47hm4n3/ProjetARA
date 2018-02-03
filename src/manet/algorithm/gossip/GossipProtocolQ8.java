@@ -54,7 +54,6 @@ public class GossipProtocolQ8 extends GossipProtocolAbstract {
 
 	@Override
 	public void initiateGossip(Node host, int id, long id_initiator) {
-		System.out.println(id_initiator+" INITE");
 		alreadySent = true; 
 		firstRecv = true;
 		isTimerArmed = 0;
