@@ -10,14 +10,10 @@ import utils.MessageType;
 
 public class GossipProtocolFlooding extends GossipProtocolAbstract {
 
-	private static final String PAR_PROBA = "proba";
-
 	private final int emitterdecorator_pid;
-	private final double proba;
 
 	public GossipProtocolFlooding(String prefix) {
 		emitterdecorator_pid = Configuration.getPid(prefix + "." + PAR_EMITTERPID);
-		proba = Configuration.getDouble(prefix + "." + PAR_PROBA, 1.0);
 	}
 
 	public GossipProtocolFlooding clone() {
@@ -36,19 +32,20 @@ public class GossipProtocolFlooding extends GossipProtocolAbstract {
 	@Override
 	public void processEvent(Node host, int pid, Object event) {
 		if (event instanceof Message) {
-			Message msg = new Message(host.getID(), host.getID(), MessageType.decrement, firstRecv,
-					emitterdecorator_pid);
 			if (!firstRecv) {
 				firstRecv = true;
 				Message m = (Message) event;
 				Message newMsg = new Message(host.getID(), m.getIdDest(), m.getTag(), m.getContent(), m.getPid());
+				double proba = (double) m.getContent();
 				if (CommonState.r.nextDouble() < proba) {
 					((EmitterDecorator) host.getProtocol(emitterdecorator_pid)).emit(host, newMsg);
 					alreadySent = true;
 				}
 			}
+			Message msg = new Message(host.getID(), host.getID(), MessageType.decrement, null,
+					emitterdecorator_pid);
 			EDSimulator.add(0, msg, host, emitterdecorator_pid); // Decremente
-																	// reception
+		 														// reception
 		}
 	}
 

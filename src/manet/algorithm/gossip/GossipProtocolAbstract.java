@@ -36,11 +36,9 @@ public abstract class GossipProtocolAbstract implements GossipProtocol, EDProtoc
 		this.firstRecv = firstRecv;
 	}
 
-
 	public int getTimerArmed() {
 		return isTimerArmed;
 	}
-
 
 	public void setTimerArmed(int isTimerArmed) {
 		this.isTimerArmed = isTimerArmed;

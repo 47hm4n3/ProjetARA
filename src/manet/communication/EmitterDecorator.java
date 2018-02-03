@@ -1,6 +1,5 @@
 package manet.communication;
 
-import java.util.ArrayList;
 
 import manet.Message;
 import manet.positioning.PositionProtocol;
@@ -13,23 +12,34 @@ import utils.MessageType;
 import utils.DataProtoProba;
 
 public class EmitterDecorator extends EmitterImpl implements EDProtocol {
-
+	/* 
+	 * Classe utilisée à là fois comme emitter et recepteur 
+	 * -utilisée par les gossip protocols
+	 * -incrémente et décrémente la variable associée au nombre de message "en transit"
+	 * -utilise les différentes stratégies de probabilité
+	 */
+	
+	
 	private static final String PAR_POSITIONPID = "positionprotocol";
 	private static final String PAR_GOSSIPPID = "gossipprotocol";
 	private static final String PAR_K = "k";
-
+	private static final String PAR_PROBA = "proba";
+	
 	private final int gossip_pid;
 	private final int position_pid;
+	
+	private final double proba;
 	private final int k;
 	
-	private static Integer N;
+	private static Integer N; // Nombre de message en transit lors d'une vague de diffusion
 
 	public EmitterDecorator(String prefix) {
 		super(prefix);
 		position_pid = Configuration.getPid(prefix + "." + PAR_POSITIONPID);
 		gossip_pid = Configuration.getPid(prefix + "." + PAR_GOSSIPPID);
 		k = Configuration.getInt(prefix + "." + PAR_K);
-		N = 0;
+		proba = Configuration.getDouble(prefix + "." + PAR_PROBA, 1.0);
+		N = 0; 
 	}
 
 	public EmitterDecorator clone() {
@@ -48,7 +58,7 @@ public class EmitterDecorator extends EmitterImpl implements EDProtocol {
 
 	@Override
 	public void emit(Node host, Message msg) {
-
+		// Ne fait que diffuser les message de la couche applicative mais aussi incrémenter le nombre de message en transit
 		super.emit(host, msg);
 		N += nbNeighbors(host);
 
@@ -56,6 +66,11 @@ public class EmitterDecorator extends EmitterImpl implements EDProtocol {
 
 	@Override
 	public void processEvent(Node host, int pid, Object event) {
+		/* Réception des messages de diffusion des autres noeuds
+		 * -Calcule de la probabilité selon le type de diffusion (devrait être à la couche applicative mais c'est moins jolie)
+		 * -Délivrance du message à la couche applicative
+		 * Mais aussi réception d'un message du même noeud venant de la couche applicative afin de décrémenter le nombre de message en transit
+		 */
 		if (event instanceof Message) {
 			Message msg = ((Message) event);
 			Message newMsg = null;
@@ -66,7 +81,7 @@ public class EmitterDecorator extends EmitterImpl implements EDProtocol {
 				break;
 
 			case MessageType.flooding : 
-				newMsg = new Message(msg.getIdSrc(), msg.getIdSrc(), msg.getTag(), null, msg.getPid());
+				newMsg = new Message(msg.getIdSrc(), msg.getIdSrc(), msg.getTag(), proba, msg.getPid());
 				EDSimulator.add(0, newMsg, host, gossip_pid);
 				break;
 
@@ -105,8 +120,9 @@ public class EmitterDecorator extends EmitterImpl implements EDProtocol {
 	}
 
 	private double calculateProbability(Node host, long idSrc) {
-		Node node = null;
-		node = Network.get((int)idSrc);
+		// Cacule de probabilité selon la distance récepteur et émetteur, et le scope
+		// Méthode utilisée pour GossipProtocolDistance et GossipProtocolQ8 avec stratégie 4
+		Node node =  Network.get((int)idSrc);
 		PositionProtocol hostPos = (PositionProtocol) host.getProtocol(position_pid);
 		PositionProtocol nodePos = (PositionProtocol) node.getProtocol(position_pid);
 		return hostPos.getCurrentPosition().distance(nodePos.getCurrentPosition())/(double)getScope();
@@ -114,6 +130,8 @@ public class EmitterDecorator extends EmitterImpl implements EDProtocol {
 	}
 
 	private int nbNeighbors(Node host) {
+		// Récupère le nombre de voisins 
+		// Méthode utilisée pour GossipProtocolK et GossipProtocolQ8 avec stratégie 3
 		PositionProtocol hostPos = null;
 		PositionProtocol nodePos = null;
 		Node node = null;
@@ -130,10 +148,6 @@ public class EmitterDecorator extends EmitterImpl implements EDProtocol {
 			}
 		}
 		return cpt;
-	}
-
-	public void decrementN(int n) {
-		N -= n;
 	}
 
 	public int getN() {

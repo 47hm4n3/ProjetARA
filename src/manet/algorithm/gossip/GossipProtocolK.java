@@ -10,9 +10,7 @@ import utils.MessageType;
 
 public class GossipProtocolK extends GossipProtocolAbstract {
 	
-	
 	private final int emitterdecorator_pid;
-	private double prob;
 	
 	public GossipProtocolK(String prefix) {
 		emitterdecorator_pid = Configuration.getPid(prefix + "." + PAR_EMITTERPID);
@@ -30,18 +28,17 @@ public class GossipProtocolK extends GossipProtocolAbstract {
 	public void processEvent(Node host, int pid, Object event) {
 		
 		if (event instanceof Message) {
-			Message msg = new Message(host.getID(), host.getID(), MessageType.decrement, firstRecv,
-					emitterdecorator_pid);
 			if(!firstRecv) {
 				firstRecv = true;
 			Message m = (Message) event;
 			Message newMsg = new Message(host.getID(), m.getIdDest(), m.getTag(), m.getContent(), m.getPid());
-				prob = (double)m.getContent();
+				double prob = (double)m.getContent();
 				if (CommonState.r.nextDouble() < prob) {
 					((EmitterDecorator) host.getProtocol(emitterdecorator_pid)).emit(host, newMsg);
 					alreadySent = true;
 				}
 			}
+			Message msg = new Message(host.getID(), host.getID(), MessageType.decrement, firstRecv, emitterdecorator_pid);
 			EDSimulator.add(0, msg, host, emitterdecorator_pid); // Decremente reception
 		}	
 	}

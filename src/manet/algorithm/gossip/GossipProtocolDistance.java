@@ -11,10 +11,7 @@ import utils.MessageType;
 public class GossipProtocolDistance extends GossipProtocolAbstract {
 
 	private final int emitterdecorator_pid;
-	private double proba;
-	static Integer cpt = 0;
 	
-
 	public GossipProtocolDistance(String prefix) {
 		emitterdecorator_pid = Configuration.getPid(prefix + "." + PAR_EMITTERPID);
 	}
@@ -36,14 +33,12 @@ public class GossipProtocolDistance extends GossipProtocolAbstract {
 			if (!firstRecv) {
 				firstRecv = true;
 				Message m = (Message) event;
-				proba = (double) m.getContent();
+				double proba = (double) m.getContent();
 				Message newMsg = new Message(host.getID(), m.getIdDest(), m.getTag(), m.getContent(), m.getPid());
 				double rdm = CommonState.r.nextDouble();
 				if (rdm < proba) {
 					((EmitterDecorator) host.getProtocol(emitterdecorator_pid)).emit(host, newMsg);
 					alreadySent = true;
-				} else {
-					cpt++;
 				}
 			}
 			EDSimulator.add(0, msg, host, emitterdecorator_pid); // Decremente

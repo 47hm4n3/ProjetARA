@@ -11,7 +11,11 @@ import peersim.core.Network;
 import peersim.core.Node;
 
 public class GossipControler implements Control {
-
+	/* 
+	 * Controller permettant au similuateur de lancer les diffusions 
+	 * Ainsi que caculer que l'atteignabilité des noeuds et l'économie de rediffusion
+	 */
+	
 	private static final String PAR_EMITTERPID = "emitterdecoratorprotocol";
 	private static final String PAR_GOSSIPPID = "gossipprotocol";
 	private static final String PAR_WAVESNUMBER = "wavesnumber";
@@ -20,10 +24,9 @@ public class GossipControler implements Control {
 	private final int gossip_pid;
 	private final int waves_number;
 	private Node node;
-	private int wave;
-	private List<Double> atts;
-	private List<Double> ERs;
-	private double nbAtt;
+	private int wave; // Nombre de vague
+	private List<Double> atts; // Liste permettant de calculer le nombre de noeuds moyen atteignables (ainsi que l'écart type)
+	private List<Double> ERs; // Liste permettant de calculer le nombre de noeuds moyen ne rediffusant pas (ainsi que l'écart type)
 	private boolean start = true;
 
 	public GossipControler(String prefix) {
@@ -42,12 +45,8 @@ public class GossipControler implements Control {
 			
 			if (((EmitterDecorator) node.getProtocol(emitterdecorator_pid)).getN() == 0) { // the previous wave has finished
 				
-				
-			if (!start) {
-					
-					//System.out.println("vague " + (waves_number - wave + 1) + " " + node.getID());
-					double d = getAtt();
-					atts.add(d); // calculate and save this wave's Att
+			if (!start) {// Permet initialement de lancer une diffusion avant de calculer les ATT et ER
+					atts.add(getAtt()); // calculate and save this wave's Att
 					ERs.add(getER()); // calculate and save this wave's ER
 					wave--; // decrement number of remaining waves
 					resetStates();
@@ -67,7 +66,8 @@ public class GossipControler implements Control {
 	}
 	
 	private void resetStates() {
-		for (int i = 0; i < Network.size(); i++) { // reset the first time reception boolean to true
+		// Remet à l'état initial les variables utilisées par les algorithmes de diffusion
+		for (int i = 0; i < Network.size(); i++) {
 			Node n = Network.get(i);
 			GossipProtocolAbstract gpf = ((GossipProtocolAbstract) n.getProtocol(gossip_pid));
 			if (gpf.getFirstRecv()) {
@@ -80,7 +80,7 @@ public class GossipControler implements Control {
 
 	public double getAtt() {
 		// Pourcentage de noeuds atteignables ayant recu le message
-		nbAtt = 0;
+		double nbAtt = 0 ;
 		for (int i = 0; i < Network.size(); i++) { // reset the first time reception boolean to true
 			Node n = Network.get(i);
 			GossipProtocolAbstract gpf = ((GossipProtocolAbstract) n.getProtocol(gossip_pid));
@@ -94,6 +94,7 @@ public class GossipControler implements Control {
 	}
 
 	public double getER() {
+		// Pourcentage de noeuds atteignables ayant recu le message puis n'ayant pas retransmis
 		double r = 0;
 		double t = 0;
 		for (int i = 0; i < Network.size(); i++) {
@@ -108,21 +109,23 @@ public class GossipControler implements Control {
 	
 
 	public double getAverageAtt() {
+		// Calcule le nombre de noeuds moyen atteignables
 		return atts.stream().reduce((e1,e2)->e1+e2).get()/atts.size();
 	}
 
 	public double getAverageER() {
+		// Calcule le nombre de noeuds moyen ne rediffusant pas
 		return ERs.stream().reduce((e1,e2)->e1+e2).get()/ERs.size();
 	}
 
 	public double getAttStandardDeviation() {
-
+		// Calcule l'écart type de l'atteignabilité
 		double num = getAverageAtt();
 		return Math.sqrt(atts.parallelStream().map(e->Math.pow((e - num), 2)).reduce((e1,e2)->e1+e2).get()/atts.size());
 	}
 
 	public double getERStandardDeviation() {
-
+		// Calcule l'écart type de l'économie de rediffusiant
 		double num = getAverageER();
 		return Math.sqrt(ERs.parallelStream().map(e->Math.pow((e - num), 2)).reduce((e1,e2)->e1+e2).get()/ERs.size());
 		
