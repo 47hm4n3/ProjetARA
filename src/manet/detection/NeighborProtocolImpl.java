@@ -23,7 +23,7 @@ public class NeighborProtocolImpl implements NeighborProtocol, EDProtocol {
 	private final long period;
 	private final long delta;
 	private List<Long> neighbours;
-	private int[] timer; //chaque noeud a pour chacun de ses voisins un timer associé
+	private int[] timer; //chaque noeud a pour chacun de ses voisins un timer associï¿½
 	private Message msgReceived;
 	private Message msgToSend;
 	
@@ -72,9 +72,7 @@ public class NeighborProtocolImpl implements NeighborProtocol, EDProtocol {
 		if (event instanceof Message) {
 			
 			msgReceived = (Message) event;
-			
-			//System.out.println("ID "+host.getID()+" recoit un message de type "+msgReceived.getTag());
-			
+						
 			long idSrc = msgReceived.getIdSrc();
 			
 			switch(msgReceived.getTag()) {

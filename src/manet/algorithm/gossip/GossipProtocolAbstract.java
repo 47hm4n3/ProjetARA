@@ -8,7 +8,7 @@ public abstract class GossipProtocolAbstract implements GossipProtocol, EDProtoc
 	
 	protected boolean alreadySent = false;
 	protected boolean firstRecv = false;
-	
+	protected boolean isTimerArmed=false;
 	
 	public GossipProtocolAbstract clone () {
 		try {
@@ -34,6 +34,16 @@ public abstract class GossipProtocolAbstract implements GossipProtocol, EDProtoc
 
 	public void setFirstRecv(boolean firstRecv) {
 		this.firstRecv = firstRecv;
+	}
+
+
+	public boolean getTimerArmed() {
+		return isTimerArmed;
+	}
+
+
+	public void setTimerArmed(boolean isTimerArmed) {
+		this.isTimerArmed = isTimerArmed;
 	}
 	
 	
