@@ -224,18 +224,18 @@ public void emit(Node host, Message msg) {
 
 \begin{boxedlisting}
 public class NeighborProtocolImpl implements NeighborProtocol, EDProtocol {
-
 	private static final String PAR_EMITTERPID = "emitterprotocol";
 	private static final String PAR_PERIOD = "period";
 	private static final String PAR_DELTA = "delta";
 
 	private final int neighbour_pid;
 	private final int emitter_pid;
-	private final long period;
-	private final long delta;
+	private final long period; // Timer pour l'envoie du heartbeat
+	private final long delta; // Timer pour potentiellement retirer un noeud de ses voisins 
 	private List<Long> neighbours;
-	private List<Long> periodN;
-	private Message msg;
+	private int[] timer; //chaque noeud a pour chacun de ses voisins un timer associe
+	private Message msgReceived;
+	private Message msgToSend;
 	
 	public NeighborProtocolImpl(String prefix) {
 		String tmp[] = prefix.split("\\.");
@@ -261,7 +261,10 @@ public class NeighborProtocolImpl implements NeighborProtocol, EDProtocol {
 	public NeighborProtocolImpl clone() {
 		try {
 			neighbours = new ArrayList<Long>();
-			periodN = new ArrayList<Long>();
+			timer = new int[Network.size()];
+			for(int i=0;i<Network.size();i++) {
+				timer[i]=0;
+			}
 			return (NeighborProtocolImpl) super.clone();
 		} catch (Exception e) {
 			System.out.println("Cloning NeighborProtocolImpl Failed !");
@@ -274,39 +277,45 @@ public class NeighborProtocolImpl implements NeighborProtocol, EDProtocol {
 		if (neighbour_pid != pid) {
 			throw new RuntimeException("Receive Event for wrong protocol");
 		}
-		if (event instanceof String) {
-			msg = new Message(host.getID(), -1, "", MessageType.probe, neighbour_pid);
-			switch ((String) event) {
+		if (event instanceof Message) {
+			msgReceived = (Message) event;	
+			long idSrc = msgReceived.getIdSrc();
+			switch(msgReceived.getTag()) {
 			case MessageType.probe:
-				((EmitterImpl) host.getProtocol(emitter_pid)).emit(host, msg);
-				EDSimulator.add(period, MessageType.probe, host, neighbour_pid);
+				// Reception d'un process event timer declenchant l'envoie du heartbeat et on rearme un timer pour envoyer le prochain
+				idSrc = host.getID();
+				msgToSend = new Message(idSrc, -1, MessageType.heartbeat, host, neighbour_pid);
+				((EmitterImpl) host.getProtocol(emitter_pid)).emit(host, msgToSend);
+				EDSimulator.add(period, new Message(idSrc,-1,MessageType.probe,host,neighbour_pid), host, neighbour_pid);
 				break;
+				
 			case MessageType.timer:
-				for (int i = 0; i < neighbours.size(); i++) {
-					if (!periodN.contains(neighbours.get(i))) {
-						neighbours.remove(i);
-					}
-				}
-				periodN.clear();
-				EDSimulator.add(delta, MessageType.timer, host, neighbour_pid);
+				// Reception d'un process event timer associe a un voisin, permettant de suggerer si il est toujours voisin
+				int newTimer = timer[(int)idSrc]-1; 
+				timer[(int)idSrc]=newTimer;
+				if(newTimer == 0) 
+					neighbours.remove(idSrc);
 				break;
+				
+			case MessageType.heartbeat:
+				// Reception d'un process event (heartbeat) d'un autre noeud
+				if (!neighbours.contains(idSrc)) {
+					neighbours.add(idSrc);
+				}
+				timer[(int)idSrc]++;
+				msgToSend = new Message(idSrc, -1, MessageType.timer, host, neighbour_pid);
+				EDSimulator.add(delta, msgToSend, host, neighbour_pid);
+				break;
+			
 			default:
 				break;
 			}
-		} else if (event instanceof Message) {
-			long id = ((Message) event).getIdSrc();
-			if (!periodN.contains(id)) {
-				periodN.add(id);
-			}
-			if (!neighbours.contains(id)) {
-				neighbours.add(id);
-			}
-			
 		} else {
 			throw new RuntimeException("Received Event of unmatching type");
 		}
 	}
 }
+
 \end{boxedlisting}
 
 \subsection{Question 7}
@@ -361,68 +370,66 @@ La stratégie \textbf{(Strategy6Init)} positionne les nœuds du réseau sous for
 \begin{boxedlisting}
 public class DensityController implements Control{
 	private static final String PAR_NEIGHBORPID = "neighborprotocol";
+
 	private int neighbour_pid;
-	private NeighborProtocolImpl neighbourProt;
+	private NeighborProtocolImpl []neighbourProt;
 	private List<Double> densities;
 	private List<Double> standardDeviations;
+	private int SIZE;
+	private NumberFormat f = new DecimalFormat("#0.00"); 
 	
 	public DensityController(String prefix) {
 		neighbour_pid = Configuration.getPid(prefix+"."+PAR_NEIGHBORPID);
 		densities = new ArrayList<Double>();
 		standardDeviations  = new ArrayList<Double>();
+		this.SIZE = Network.size();
+		neighbourProt = new NeighborProtocolImpl[SIZE];
+		for(int i = 0; i < SIZE; i++) 
+			neighbourProt[i] = (NeighborProtocolImpl)Network.get(i).getProtocol(neighbour_pid);
 	}
 
 	@Override
 	public boolean execute() {
 		densities.add(getDensity());
-		standardDeviations.add(getStandardDeviation());
+		double averageDensity = getAverageDensity();
+		double standardDeviation = getStandardDeviation();
 		return false;
 	}
 
 	public double getDensity() {
 		double sum = 0;
-		for(int i = 0;i < Network.size();i++) {
-			neighbourProt = (NeighborProtocolImpl)Network.get(i).getProtocol(neighbour_pid);
-			sum += neighbourProt.getNeighbors().size();
+		for(int i = 0; i < SIZE; i++) {
+			sum += neighbourProt[i].getNeighbors().size();
 		}
 		return sum/Network.size();
 	}
 	
 	public double getStandardDeviation() {
-		double density = getDensity();
+		double density = densities.get(densities.size()-1); // calculee dans le execute()
 		double sum = 0;
-		for (int i = 0; i<Network.size(); i++) {
-			neighbourProt = (NeighborProtocolImpl)Network.get(i).getProtocol(neighbour_pid);
-			 sum += Math.pow(((double)neighbourProt.getNeighbors().size() - density),2) ;
+		for (int i = 0; i < SIZE; i++) {
+			 sum += Math.pow(((double)neighbourProt[i].getNeighbors().size() - density),2) ;
 		}
 		return Math.sqrt(sum/Network.size());
 	}
-	
 	public double getAverageDensity() {
 		double sum = 0;
-		for (int i = 0; i < densities.size(); i++) { 
-        	sum += densities.get(i);
-            }
+		for (int i = 0; i < densities.size(); i++) { sum += densities.get(i); }
 		return sum/densities.size();
 	}
-	
 	public double getAverageStandardDeviation() {
 		double sum = 0;
-		for (int i =0; i< standardDeviations.size(); i++) { 
-        	sum += standardDeviations.get(i);
-        }
+		for (int i = 0; i < standardDeviations.size(); i++) {sum += standardDeviations.get(i);}
 		return sum/standardDeviations.size();
 	}
-	
 	public double getDensityStandardDeviation() {
 		double sum = 0;
 		double num = getAverageDensity();
-		for (int i = 0; i < densities.size(); i++) {
-			sum += Math.pow((densities.get(i) - num),2);
-		}
+		for (int i = 0; i < densities.size(); i++) { sum += Math.pow((densities.get(i) - num),2); }
 		return Math.sqrt(sum/densities.size());
-	}	
+	}
 }
+
 \end{boxedlisting}
 
 \subsection{Question 10}
@@ -454,11 +461,11 @@ public class DensityController implements Control{
 \subsection{Question 11}
 
 L'impact de la portée (scope) sur \textbf{(Strategy1InitNext)} :\\
-En analysant les valeurs des deux dernières colonnes du tableau pour la stratégie 1, nous remarquons l'impact significatif de la portée des nœuds du réseau sur la densité qui passe de 1 à 36, qui est expliqué par l'augmentation du nombre de voisins par nœud avec l'augmentation de sa portée qui va contenir plus de nœuds (voisins).
+En analysant les valeurs des deux dernières colonnes du tableau pour la stratégie 1, nous remarquons l'impact significatif de la portée des nœuds du réseau sur la densité qui passe de 1 à 36, qui est expliqué par l'augmentation du nombre de voisins par nœud avec l'augmentation de sa portée qui va contenir plus de nœuds (voisins).\\
 
 
 L'impact de la portée (scope) sur \textbf{(Strategy3InitNext)} :\\
-En faisant la même analyse pour la stratégie 3, nous remarquons que l'impact est faible, ce qui est due à la distribution des nœuds initialement qui est faite dans une fenêtre déjà réduite mais liée à la taille du scope. 
+En faisant la même analyse pour la stratégie 3, nous remarquons que l'impact est faible, ce qui est due à la distribution des nœuds initialement qui est faite dans une fenêtre déjà réduite mais liée à la taille du scope mais qui permet aux nœuds d'avoir un nombre de voisins proche de la moyenne. 
 \newpage
 \section{Exercice 2 : Étude de protocoles de diffusion}
 \subsection{Question 1}
@@ -555,24 +562,24 @@ En observant la courbe de la densité nous remarquons qu'elle augmente en augmen
 \subsection{Question 2}
 
 Pour ne pas user de notre position d'observateur de l'ensemble du réseau et ses paramètres, nous nous sommes limités au possible physiquement, et avons codé un emitter décoré qui nous permet de compter les messages en transit dans le réseau à tout moment.
-Le fait qu'il n'y ait aucun message en transit nous permet de supposer que la vague actuelle est finie. La confirmation vien du fait qu'il faut aussi vérifier que ce n'est ni l'état initial ni un moment d'équilibre entre messages envoyés et reçus au milieu d'une vague de transmissions.
+Le fait qu'il n'y ait aucun message en transit nous permet de supposer que la vague actuelle est finie. La confirmation vient du fait qu'il faut aussi vérifier que ce n'est ni l'état initial ni un moment d'équilibre entre messages envoyés et reçus au milieu d'une vague de transmissions.
 
 \newpage
 \subsection{Question 3}
 
 \begin{boxedlisting}
-public class GossipControler implements Control {
+public class GossipControler implements Control {	
 	private static final String PAR_EMITTERPID = "emitterdecoratorprotocol";
 	private static final String PAR_GOSSIPPID = "gossipprotocol";
 	private static final String PAR_WAVESNUMBER = "wavesnumber";
+
 	private final int emitterdecorator_pid;
 	private final int gossip_pid;
-	private final int waves_number;
+	private final int waves_number; // Nombre de vague
 	private Node node;
-	private int wave;
+	private int wave; // Numero de la vague actuelle
 	private List<Double> atts;
 	private List<Double> ERs;
-	private double nbAtt;
 	private boolean start = true;
 
 	public GossipControler(String prefix) {
@@ -582,20 +589,18 @@ public class GossipControler implements Control {
 		wave = waves_number;
 		atts = new ArrayList<Double>();
 		ERs = new ArrayList<Double>();
-		initialize(); // Pick a new node to broadcast first time
+		initialize(); // Pick a new node to broadcast
 	}
 
 	@Override
 	public boolean execute() {
 		if (wave > 0) {
 			if (((EmitterDecorator) node.getProtocol(emitterdecorator_pid)).getN() == 0) { // the previous wave has finished
-			if (!start) {
-					double d = getAtt();
-					atts.add(d); // calculate and save this wave's Att
+			if (!start) {// Permet initialement de lancer une diffusion avant de calculer les ATT et ER
+					atts.add(getAtt()); // calculate and save this wave's Att
 					ERs.add(getER()); // calculate and save this wave's ER
 					wave--; // decrement number of remaining waves
-					resetStates(); // reset counters and start booleans
-					
+					resetStates();
 				}
 				initialize(); // Pick a new node to broadcast
 				((GossipProtocolAbstract) node.getProtocol(gossip_pid)).initiateGossip(node, wave, node.getID()); // initiate a new wave
@@ -610,21 +615,23 @@ public class GossipControler implements Control {
 		}
 		return false;
 	}
-	
+
 	private void resetStates() {
-		for (int i = 0; i < Network.size(); i++) { // reset the first time reception boolean to true
+		for (int i = 0; i < Network.size(); i++) {
 			Node n = Network.get(i);
 			GossipProtocolAbstract gpf = ((GossipProtocolAbstract) n.getProtocol(gossip_pid));
 			if (gpf.getFirstRecv()) {
 				gpf.setFirstRecv(false);
 				gpf.setAlreadySent(false);
 			}
+			gpf.setTimerArmed(0);
 		}
 	}
 
+
 	public double getAtt() {
-		nbAtt = 0;
-		for (int i = 0; i < Network.size(); i++) { // reset the first time reception boolean to true
+		double nbAtt = 0 ;
+		for (int i = 0; i < Network.size(); i++) { // increment the number of attainable nodes
 			Node n = Network.get(i);
 			GossipProtocolAbstract gpf = ((GossipProtocolAbstract) n.getProtocol(gossip_pid));
 			if (gpf.getFirstRecv()) {
@@ -637,7 +644,7 @@ public class GossipControler implements Control {
 	public double getER() {
 		double r = 0;
 		double t = 0;
-		for (int i = 0; i < Network.size(); i++) {
+		for (int i = 0; i < Network.size(); i++) { // increment the number of attainable nodes and those who already transmitted
 			Node n = Network.get(i);
 			GossipProtocolAbstract gpf = ((GossipProtocolAbstract) n.getProtocol(gossip_pid));
 			r += gpf.getFirstRecv() ? 1 : 0;
@@ -645,37 +652,31 @@ public class GossipControler implements Control {
 		}
 		return (r - t) / r;
 	}
-	
+
 	public double getAverageAtt() {
-		double sum = 0;
-		for (int i = 0; i < atts.size(); i++) {sum += atts.get(i);}
-		return sum / atts.size();
+		return atts.stream().reduce((e1,e2)->e1+e2).get()/atts.size();
 	}
 
 	public double getAverageER() {
-		double sum = 0;
-		for (int i = 0; i < ERs.size(); i++) {sum += ERs.get(i);}
-		return sum / ERs.size();
+		return ERs.stream().reduce((e1,e2)->e1+e2).get()/ERs.size();
 	}
 
 	public double getAttStandardDeviation() {
-		double sum = 0;
 		double num = getAverageAtt();
-		for (int i = 0; i < atts.size(); i++) {sum += Math.pow((atts.get(i) - num), 2);}
-		return Math.sqrt(sum / atts.size());
+		return Math.sqrt(atts.parallelStream().map(e->Math.pow((e - num), 2)).reduce((e1,e2)->e1+e2).get()/atts.size());
 	}
 
 	public double getERStandardDeviation() {
-		double sum = 0;
 		double num = getAverageER();
-		for (int i = 0; i < ERs.size(); i++) {sum += Math.pow((ERs.get(i) - num), 2);}
-		return Math.sqrt(sum / ERs.size());
+		return Math.sqrt(ERs.parallelStream().map(e->Math.pow((e - num), 2)).reduce((e1,e2)->e1+e2).get()/ERs.size());
+		
 	}
 
 	private void initialize() {
 		node = Network.get(Math.abs(CommonState.r.nextInt(Network.size())));
 	}
 }
+
 \end{boxedlisting}
 
 Les résultats des test effectués avec 500 vagues et la configuration listée dans la question 1.\\
