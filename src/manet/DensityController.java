@@ -1,5 +1,7 @@
 package manet;
 
+import java.text.DecimalFormat;
+import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -17,6 +19,7 @@ public class DensityController implements Control{
 	private List<Double> densities;
 	private List<Double> standardDeviations;
 	private int SIZE;
+	private NumberFormat f = new DecimalFormat("#0.00"); 
 	
 	public DensityController(String prefix) {
 		neighbour_pid = Configuration.getPid(prefix+"."+PAR_NEIGHBORPID);
@@ -40,13 +43,11 @@ public class DensityController implements Control{
 		//System.out.println("----------- AverageDensity "+getAverageDensity());
 		//System.out.println("----------- AverageStandardDeviation "+getAverageStandardDeviation());
 		//System.out.println("----------- DensityStandardDeviation "+getDensityStandardDeviation());
-		//System.out.println("-------------------------------");
-		
-		
-		
-		System.out.println("----------- D "+averageDensity);
-		System.out.println("----------- E/D "+standardDeviation/averageDensity);
-		System.out.println("----------- ED/D "+getDensityStandardDeviation()/averageDensity);
+		System.out.println("-------------------------------");
+		System.out.print(" D "+f.format(averageDensity));
+		System.out.print(" E/D "+f.format(standardDeviation/averageDensity));
+		System.out.print(" ED/D "+f.format(getDensityStandardDeviation()/averageDensity));
+		System.out.println();
 		return false;
 	}
 

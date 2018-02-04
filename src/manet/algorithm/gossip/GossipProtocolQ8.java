@@ -12,7 +12,8 @@ import utils.DataProtoProba;
 import utils.MessageType;
 
 public class GossipProtocolQ8 extends GossipProtocolAbstract {
-
+	
+	
 	protected static final String PAR_NEIGHBORPID = "neighborprotocol";
 	protected static final String PAR_TMIN = "tmin";
 	protected static final String PAR_TMAX = "tmax";
@@ -24,9 +25,7 @@ public class GossipProtocolQ8 extends GossipProtocolAbstract {
 	private double prob;
 	private final int tmin;
 	private final int tmax;
-	private final int strat;
-	
-	
+	private final int strat; // Choix entre 3 (algorithme k/V) et 4 (algorithme distance)
 	
 	private ArrayList<Long> nodeList;
 
@@ -84,20 +83,16 @@ public class GossipProtocolQ8 extends GossipProtocolAbstract {
 			case MessageType.flooding_algo3_algo8: 
 				if(isTimerArmed==1) {
 					// QUAND ON RECOIT DES MESSAGES PENDANT LE TIMER
-					
 					ArrayList<Long> l = (ArrayList<Long>)((DataProtoProba)m.getContent()).getL();
 					nodeList.removeAll(l);
 				}
 				
 				if(!firstRecv) {
-					
-					nodeList = getNeighbors(host);
-					ArrayList<Long> l = (ArrayList<Long>)((DataProtoProba)m.getContent()).getL();
-					//System.out.println(host.getID()+" Mes voisins : "+nodeList);
-					//System.out.println(host.getID()+" Je reÃ§ois : "+l);
-					nodeList.removeAll(l);
-					//System.out.println(host.getID()+" nodeList : "+nodeList);
+					// Uniquement exécutée à la première réception
 					firstRecv = true;
+					nodeList = getNeighbors(host); // Initialisation de lx à la liste de voisins
+					ArrayList<Long> l = (ArrayList<Long>)((DataProtoProba)m.getContent()).getL(); // Récupère les voisins de l'émetteur
+					nodeList.removeAll(l); // On soutrait de ses voisins, les voisins de l'émetteur
 					DataProtoProba d = new DataProtoProba(getNeighbors(host),-1);
 					Message newMsg = new Message(host.getID(), -1, MessageType.flooding_algo3_algo8, d, emitterdecorator_pid); // tag == flooding
 					prob =  (double)((DataProtoProba)m.getContent()).getProba();
@@ -105,6 +100,7 @@ public class GossipProtocolQ8 extends GossipProtocolAbstract {
 						((EmitterDecorator) host.getProtocol(emitterdecorator_pid)).emit(host, newMsg);
 						alreadySent = true;
 					}else {
+						// On arme le timer si on a pas pu envoyer
 						isTimerArmed ++;
 						double timer = (CommonState.r.nextDouble()*(tmax-tmin))+tmin;
 						Message tm = new Message(host.getID(), host.getID(), MessageType.timer_algo8, null, my_pid);
@@ -116,7 +112,9 @@ public class GossipProtocolQ8 extends GossipProtocolAbstract {
 				EDSimulator.add(0, msg, host, emitterdecorator_pid); // Decremente reception
 				break;
 			case MessageType.timer_algo8 :
+				// TIME OUT
 				if(!nodeList.isEmpty()) {
+					// Si la liste lx est vide, on diffuse
 					Message newMsg = null;
 					DataProtoProba d = new DataProtoProba(getNeighbors(host),-1);
 					switch(strat) {
@@ -131,8 +129,7 @@ public class GossipProtocolQ8 extends GossipProtocolAbstract {
 					alreadySent = true;
 				}
 				EDSimulator.add(0, msg, host, emitterdecorator_pid);
-
-				isTimerArmed ++;
+				isTimerArmed ++; // On ne trait plus les message suivant, à partir de ce moment on en fait que décrémenter le nombre de message en transit
 				break;
 			default :
 				System.out.println("ERROR MESSAGE GOSSIP ALGO 8");
