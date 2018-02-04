@@ -131,6 +131,17 @@ postbreak=\mbox{\textcolor{red}{$\hookrightarrow$}\space}
 % BODY
 %-------------------------------------------------------------------------------
 \section{Introduction}
+Ce projet s'inscrit dans le cadre de l'UE ARA. Son but est d'observer le comportement de processus dans un réseau où les communications se font principalement par Broadcast.
+
+\textbf{MANET} pour \textit{Mobile Ad hoc Networks} désigne un réseau où tous les nœuds sont mobiles.
+La mobilité des nœuds du réseau fait que au cours du temps leur distribution n'est pas uniforme et ceci donne sens au concept de \textbf{densité}, qui exprime la distribution des nœuds par rapport à une zone de mobilité.
+
+Les diffusions (broadcasts) se font en fonction d'un paramètre physique , qui est la \textbf{portée (scope)} qui permet de simuler le comportement des communications dans un réseau mobile.
+Le fait que les nœuds ont tous une portée identique et paramétrable, et ne peuvent émettre et recevoir de messages que avec les nœuds dans leur portée, matérialise le concept de \textbf{voisinage} qui représente l'ensemble des nœuds présents dans la portée. 
+
+Les échanges entre nœuds (processus) dans ce type de réseaux sont nombreux, donc plusieurs stratégies permettant de \textbf{maximiser} les nœuds atteints par les diffusions, tout en \textbf{minimisant} les retransmissions inutiles. Ce qui induit deux paramètres d'analyse des performances \textbf{Atteignabilité} et \textbf{Économie de Retransmission}.
+
+Différentes stratégies de mesure et de paramétrage des échanges de messages seront abordées dans ce projet et principalement l'approche probabiliste qui elle va se baser sur des concepts tel que : le pure aléatoire, probabilité en fonction de la densité et probabilité en fonction du voisinage.
 
 \newpage
 
@@ -184,7 +195,7 @@ control.graph.time_slow 0.0002
 \end{boxedlisting}
 
 \subsection{Question 3}
-La stratégie \textbf{(Strategy1InitNext)} initialise les positions des nœuds du réseau dans l'espace compris entre [0,maxX] et [0,maxY], en générant une position (aléatoire) et une vitesse initiale nulle. Aussi fait mouvoir les nœuds à chaque appel en générant une nouvelle position (aléatoire).
+La stratégie \textbf{(Strategy1InitNext)} initialise les positions des nœuds du réseau dans l'espace compris entre [0,maxX] et [0,maxY] qui représente la frame principale, en générant une position (aléatoire) et une vitesse initiale nulle. Aussi fait mouvoir les nœuds à chaque appel en générant une nouvelle position (aléatoire).
 
 \subsection{Question 4}
 La stratégie \textbf{(Strategy2Next)} ne fait que restituer la position actuelle du nœud comme nouvelle position. Ce qui mène à une immobilité des nœuds.
@@ -194,14 +205,13 @@ La stratégie \textbf{(Strategy2Next)} ne fait que restituer la position actuell
 \begin{boxedlisting}
 @Override
 public void emit(Node host, Message msg) {
-	for (int i = 0; i < Network.getCapacity(); i++) { // For all network
-															// nodes
+	for (int i = 0; i < Network.getCapacity(); i++) { // For all network nodes
 		node = Network.get(i);
 		if (host.getID() != node.getID()) { // Except me
 			if (host.getID() == msg.getIdDest()) { // I am the recipient of the received message
 				hostPos = (PositionProtocol) host.getProtocol(position_pid);
 				nodePos = (PositionProtocol) node.getProtocol(position_pid);
-				if ((hostPos.getCurrentPosition().distance(nodePos.getCurrentPosition()) <= this.getScope())) {
+				if ((hostPos.getCurrentPosition().distance(nodePos.getCurrentPosition()) <= this.getScope())) { // If the node is in my scope
 					EDSimulator.add(this.getLatency(), msg, node, position_pid); // Send()
 				}
 			}
@@ -336,13 +346,14 @@ Le tableau ci-dessous montre la connexité à termes des combinaisons des diffé
 \captionof{table}{Combinaisons SPI/SD et connexité à termes}
 \end{center}
 
-La stratégie \textbf{(Strategy3InitNext)} réduit la fenêtre à un carré centré au milieu et de coté égal à 2 x (scope - marge) où marge est le minimum entre scope et 20.\\
+La stratégie \textbf{(Strategy3InitNext)} réduit la fenêtre de mobilité de nœuds en générant les nouvelle positions dans un carré centré au milieu et de coté égal à 2 x (scope - marge) où marge est au minimum entre scope et 20.
+Si le nœud dispose d’un scope inférieur (ou égal) à 20, alors la position retournée est le centre de la fenêtre principale. Et dans ce cas, le graphe est tout le temps connexe.\\
 
-La stratégie \textbf{(Strategy4Next)} génère une nouvelle position du noeud en fonction des voisins aux quels il est connecté en choisissant un angle et une distance dans [0, scope] en faisant bouger un nœud à la fois.\\
+La stratégie \textbf{(Strategy4Next)} génère une nouvelle position du nœud en fonction des voisins aux quels il est connecté en choisissant un angle et une distance dans [0, scope] en faisant bouger un nœud à la fois.\\
 
 La stratégie \textbf{(Strategy5Init)} réduit la fenêtre au moment de l'initialisation des positions à un rectangle entre [maxX/3,maxY/3] et [maxX,maxY] ou une position en fonction de celle de l'un des voisins sur toute la fenêtre.\\
 
-La stratégie \textbf{(Strategy6Init)} positionne les nœuds du réseau sous forme d'une étoile centrée au milieu de la fenêtre avec deux niveaux de nœuds (d'id pairs et impairs) éloignés d'une distance de scope/2.\\
+La stratégie \textbf{(Strategy6Init)} positionne les nœuds du réseau sous forme de deux cercles concentriques centrés au milieu de la fenêtre avec deux rayons (d'id pairs et impairs) éloignés d'une distance de scope/2.\\
 
 \newpage
 \subsection{Question 9}
@@ -443,9 +454,11 @@ public class DensityController implements Control{
 \subsection{Question 11}
 
 L'impact de la portée (scope) sur \textbf{(Strategy1InitNext)} :\\
+En analysant les valeurs des deux dernières colonnes du tableau pour la stratégie 1, nous remarquons l'impact significatif de la portée des nœuds du réseau sur la densité qui passe de 1 à 36, qui est expliqué par l'augmentation du nombre de voisins par nœud avec l'augmentation de sa portée qui va contenir plus de nœuds (voisins).
+
 
 L'impact de la portée (scope) sur \textbf{(Strategy3InitNext)} :\\
-
+En faisant la même analyse pour la stratégie 3, nous remarquons que l'impact est faible, ce qui est due à la distribution des nœuds initialement qui est faite dans une fenêtre déjà réduite mais liée à la taille du scope. 
 \newpage
 \section{Exercice 2 : Étude de protocoles de diffusion}
 \subsection{Question 1}
@@ -536,12 +549,13 @@ Le tableau complété :
 \end{figure}
 
 Interprétation de la courbe :\\
-Interprétation ...
+
+En observant la courbe de la densité nous remarquons qu'elle augmente en augmentant la taille du réseau, ce qui indique que les deux métriques sont proportionnelles, et s'explique par l'augmentation du nombre de voisins car la fenêtre de mobilité reste la même, ceci avec une écart observable entre le nombre de voisins de chaque nœud, qui diminue en se rapprochant de zéro.
 
 \subsection{Question 2}
 
-Expliquez votre démarche pour régler ce problème. Votre solution devra se faire de
-manière non intrusive, ni dans le code applicatif, ni dans le code qui vous a été fourni.
+Pour ne pas user de notre position d'observateur de l'ensemble du réseau et ses paramètres, nous nous sommes limités au possible physiquement, et avons codé un emitter décoré qui nous permet de compter les messages en transit dans le réseau à tout moment.
+Le fait qu'il n'y ait aucun message en transit nous permet de supposer que la vague actuelle est finie. La confirmation vien du fait qu'il faut aussi vérifier que ce n'est ni l'état initial ni un moment d'équilibre entre messages envoyés et reçus au milieu d'une vague de transmissions.
 
 \newpage
 \subsection{Question 3}
@@ -759,8 +773,13 @@ Les résultats des test effectués avec 500 vagues et la configuration listée d
 \end{flushright}\end{minipage}
 \end{figure}
 
+Interprétation de la courbe :\\
+
+Le fait d'avoir deux courbes aux extrémités de de l'intervalle s'explique par un effort massif de transmissions et retransmission des messages reçus par diffusion ce qui assure une atteignabilité maximale et cela même si un bon nombre d'entre eux est inutile (du fait d'une réception ultérieure). Ce qui ne donne lieux à aucune économie de retransmission, d'où sa valeur nulle.
+
+\newpage
 \subsection{Question 5}
-Chaque case contient la valeur de $Att_{500}$ obtenue.\newline
+%Chaque case contient la valeur de $Att_{500}$ obtenue.\newline
 %\begin{center}
 %\captionsetup{type=figure}
 %\begin{tabular}{|l|l|l|l|l|l|l|l|l|l|l|} \hline
@@ -850,6 +869,10 @@ Chaque case contient la valeur de $Att_{500}$ obtenue.\newline
 \caption[courbe1]{Distribution des $Att_{500}$ selon la densité et la probabilité}
 \end{figure}
 
+Interprétation de la courbe :\\
+
+En analysant le graphique nous remarquons que plus nous augmentons la taille du réseau avec une plus grande probabilité de retransmission plus l'atteignabilité est grande. Mais un effort de compromis entre les deux augmentations donne de bons résultats en mettant un nombre de nœuds moyen et une probabilité proportionnelle.
+
 \subsection{Question 6}
 
 \begin{figure}[H]
@@ -872,7 +895,7 @@ Chaque case contient la valeur de $Att_{500}$ obtenue.\newline
   	180 & 0.40 & 0.96 & 0.20 & 0.04 \\ \hline
   	200 & 0.41 & 0.96 & 0.21 & 0.04 \\ \hline
 \end{tabular}
-\captionof{table}{Résultats de simulations k= 1}
+\captionof{table}{Résultats de simulations k = 1}
 \end{flushleft}\end{minipage}
 \begin{minipage}[b]{0.5\textwidth} \begin{flushright}
 \centering
@@ -917,7 +940,7 @@ Chaque case contient la valeur de $Att_{500}$ obtenue.\newline
   	180 & 0.99 & 0.73 & 0.07 & 0.03 \\ \hline
   	200 & 0.99 & 0.75 & 0.06 & 0.03 \\ \hline
 \end{tabular}
-\captionof{table}{Résultats de simulations k= 10}
+\captionof{table}{Résultats de simulations k = 10}
 \end{flushleft}\end{minipage}
 \begin{minipage}[b]{0.5\textwidth} \begin{flushright}
 \centering
@@ -1113,6 +1136,12 @@ Chaque case contient la valeur de $Att_{500}$ obtenue.\newline
 	\caption[courbe5]{Courbe représentative}
 \end{figure}
 \end{center}
+
+Interprétation de la courbe :\\
+
+En analysant les courbes pour les quatre valeurs de la constante k (1, 5, 10 et 15), nous remarquons que les courbes d'atteignabilité sont toutes parallèles, décroissantes mais avec des écart-type plus petits grands avec l'augmentation de K. Par ailleurs l'économie de retransmission elle diminue avec l'augmentation de k, mais les courbes sont aussi parallèles avec des écart-type plus grands.  
+
+
 
 \subsection{Question 7}
 
