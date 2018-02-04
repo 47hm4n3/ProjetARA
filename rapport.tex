@@ -341,28 +341,53 @@ public class NeighborProtocolImpl implements NeighborProtocol, EDProtocol {
 
 \subsection{Question 8}
 
-Le tableau ci-dessous montre la connexité à termes des combinaisons des différentes stratégies dans les mêmes conditions de simulation que celles des questions précédentes (10 nœuds et une fenêtre de 1000 x 1000).({\color{red}si nous faisons baisser le nombre de nœuds à 2 par exemple, certaines des affirmations du tableau ne seront plus vraies} ou {\color{green}si nous changeons la valeur du scope à 300})\\
+Le tableau ci-dessous montre la connexité à termes des combinaisons des différentes stratégies dans les mêmes conditions de simulation que celles des questions précédentes (10 nœuds et une fenêtre de 1000 x 1000).({\color{red}si nous faisons baisser le nombre de nœuds à 2 par exemple, certaines des affirmations du tableau ne seront plus vraies})\\
 
 \begin{center}
 \captionsetup{type=figure}
 \begin{tabular}{|l|l|l|l|l|} \hline
 	SD\hspace{5mm}/\hspace{10mm}SPI & Strategy1InitNext & Strategy3InitNext & Strategy5Init & Strategy6Init \\ \hline
 	Strategy1InitNext & Non 			& Non 			 & Non & Non \\ \hline
-	Strategy2Next     & Non 			& \color{red}Oui & Oui & Oui \\ \hline
-	Strategy3InitNext & \color{red}Oui  & \color{red}Oui & Non & \color{red}Oui \\ \hline
-	Strategy4Next     & \color{green}Non 			& Oui 			 & Oui & Oui \\ \hline
+	Strategy2Next     & Non 			& \color{red}Non & Oui & Oui \\ \hline
+	Strategy3InitNext & \color{red}Non  & \color{red}Non & Non & \color{red}Non \\ \hline
+	Strategy4Next     & Non 			& Non 			 & Oui & Oui \\ \hline
 \end{tabular}
 \captionof{table}{Combinaisons SPI/SD et connexité à termes}
 \end{center}
 
 La stratégie \textbf{(Strategy3InitNext)} réduit la fenêtre de mobilité de nœuds en générant les nouvelle positions dans un carré centré au milieu et de coté égal à 2 x (scope - marge) où marge est au minimum entre scope et 20.
 Si le nœud dispose d’un scope inférieur (ou égal) à 20, alors la position retournée est le centre de la fenêtre principale. Et dans ce cas, le graphe est tout le temps connexe.\\
+Etant donnée que le positionnement d’un nœud est aléatoire, il faut démontrer que les nœuds ont leur scope couvre tout le temps cette nouvelle fenêtre.
+La zone de couverture du nœud la moins important est dans le coin, il faut donc que la diagonale de la frame soit inférieur à scope.\\
+Soit x la longueur et largeur de la frame pour un scope >=20, il faut que :
+\begin{center}
+racine((2*(scope-20))ˆ2 + (2*(scope-20))ˆ2) <= scope\\
+(2*(scope-20))ˆ2+(2*(scope-20))ˆ2 <= scopeˆ2\\
+2* (2*(scope-20))ˆ2 <= scopeˆ2\\
+2*(4*(scopeˆ2-40*scope+400)) <= scopeˆ2\\
+8*scopeˆ2 – 320*scope + 3200 <= scopeˆ2\\
+7*scopeˆ2 – 320*scope + 3200 <= 0\\
+\end{center}
 
-La stratégie \textbf{(Strategy4Next)} génère une nouvelle position du nœud en fonction des voisins aux quels il est connecté en choisissant un angle et une distance dans [0, scope] en faisant bouger un nœud à la fois.\\
+Par des calculs de polynôme du second degré, on trouve que scope doit être approximativement entre [14.8;30.9], pour couvrir toute la fenêtre infiniment dans le temps, il faut que le scope soit inférieur à 31. Puis, théoriquement, à partir de cette valeur pour que le graphe ne soit pas tout le temps connexe, il faudrait que deux groupes deux nœuds du systèmes choisissent infiniment des positions complètement opposées par rapport à la diagonale de la fenêtre et le plus loin possible, alors dans ce cas il existe une branche d’exécution dans laquelle aucun des deux groupes ne communiquent.
+Mais dans la pratique, il est quasi impossible de tomber sur cette exécution, surtout si on augmente la taille du réseau.\\
+
+La stratégie \textbf{(Strategy4Next)} génère une nouvelle position du nœud en fonction des voisins aux quels il est connecté en choisissant un angle et une distance dans [0, scope] vers l'un des voisins en faisant bouger un nœud à la fois.\\
+
+Si le graphe sera connexe si le nœud se dirige vers ce voisin choisi, alors j’y vais sinon je ne bouge pas, du moins, mon mouvement est de rester à la même position ce qui provoque un graphe statique et non connexe.
+Donc, il existe plusieurs «types» d’exécutions de cette stratégie, on considère un système où $N$ est le nombre de nœuds :
+\begin{itemize}
+\item N = 1, ce seul nœud se déplacera toujours dans son propre scope.
+\item N>=2 avec un graphe connexe dès le début, alors un seul nœud bougera chacun son tour vers le scope d’un nœud du réseau et ainsi de suite.
+\item N>=2 mais il existe au moins un nœud qui n’a pas de voisin. Dans ce cas, un de ces nœuds qui n’a pas voisins, va «essayer» de se déplacer vers le scope de quelqu’un d’autre et de former un graphe connexe. Si cela est impossible alors le graphe restera statique et non connexe pour la suite, sinon ce nœud se déplacera vers les autres puis formera un graphe dynamique et connexe.
+\end{itemize}
+On peut avoir comme exemple un cas particulier où N = 3, et aucun nœuds ne connaît les autres. Cependant, deux nœuds sont très proche l’un de l’autre et l’intersection de leur scope n’est pas nulle. Dans ce cas il est possible que à terme, le troisième nœuds tire une position située à cette intersection pour ensuite former un graphe connexe et dynamique.\\
 
 La stratégie \textbf{(Strategy5Init)} réduit la fenêtre au moment de l'initialisation des positions à un rectangle entre [maxX/3,maxY/3] et [maxX,maxY] ou une position en fonction de celle de l'un des voisins sur toute la fenêtre.\\
+Ensuite pour tous les nœuds restant, il va les positionner dans le scope d’un nœud précédemment positionné. Toutes ses positions sont stocké dans la HashMap, ainsi, tous les nœuds pourront récupérer leur position initial à la fin de l’exécution.\\
 
 La stratégie \textbf{(Strategy6Init)} positionne les nœuds du réseau sous forme de deux cercles concentriques centrés au milieu de la fenêtre avec deux rayons (d'id pairs et impairs) éloignés d'une distance de scope/2.\\
+Pour prouver que cette stratégie est connexe, il suffit donc de prouver que la distance entre un nœud avec un ID i et un nœud d’ID (i+1)\%N soit inférieur au scope, et cela s’applique récursivement à l’ensemble des nœuds, en utilisant des formules trigonométriques.
 
 \newpage
 \subsection{Question 9}
@@ -462,10 +487,14 @@ public class DensityController implements Control{
 
 L'impact de la portée (scope) sur \textbf{(Strategy1InitNext)} :\\
 En analysant les valeurs des deux dernières colonnes du tableau pour la stratégie 1, nous remarquons l'impact significatif de la portée des nœuds du réseau sur la densité qui passe de 1 à 36, qui est expliqué par l'augmentation du nombre de voisins par nœud avec l'augmentation de sa portée qui va contenir plus de nœuds (voisins).\\
-
+Pour la stratégie 1, plus le scope est grand plus la densité est grande. Ceci s’explique du fait que la zone de recouvrement des nœuds augmente alors que la zone de la fenêtre ne bouge pas.
+Un nœud peut couvrir jusqu’à 2*pi*scopeˆ2 de surface dans le terrain de 1500*1500, nous avons donc un rapport de recouvrement de  2*pi*scopeˆ2/1500ˆ2. Si on augmente le scope de 125, la zone de recouvrement devient  2*pi*(scope+125)ˆ2/1500² alors le rapport de recouvrement est plus grand et il est donc beaucoup plus probable de couvrir encore plus de nœuds.
 
 L'impact de la portée (scope) sur \textbf{(Strategy3InitNext)} :\\
-En faisant la même analyse pour la stratégie 3, nous remarquons que l'impact est faible, ce qui est due à la distribution des nœuds initialement qui est faite dans une fenêtre déjà réduite mais liée à la taille du scope mais qui permet aux nœuds d'avoir un nombre de voisins proche de la moyenne. 
+En faisant la même analyse pour la stratégie 3, nous remarquons que l'impact est faible, ce qui est due à la distribution des nœuds initialement qui est faite dans une fenêtre déjà réduite mais liée à la taille du scope mais qui permet aux nœuds d'avoir un nombre de voisins proche de la moyenne.\\
+Pour la stratégie 3, il se regroupe tous dans une fenêtre calculée en fonction du scope comme expliqué à la question 8, ainsi les nœuds ont en moyenne la moitié du nombre de nœuds
+Un nœud peut couvrir jusqu’à 2*pi*scopeˆ2 de surface dans un terrain de 2*(scope-20)*2*(scope-20). Le rapport de recouvrement est de  2*pi*scopeˆ2/ (2*(scope-20))ˆ2. Or nous avons
+si on trace la fonction f(scope) =  2*pi*scopeˆ2/ (2*(scope-20))ˆ2, on obtient une courbe qui croît exponentiellement en [0;20[ puis qui décroît exponentiellement en ]20;+infini[ et tend vers $\frac{1}{2}$ la différence à partir d’un scope à 125 est infime, ce qui est explique une légère baisse de la densité et et la convergence vers un nombre qui représente la moitié de la taille du réseau.
 \newpage
 \section{Exercice 2 : Étude de protocoles de diffusion}
 \subsection{Question 1}
@@ -561,8 +590,9 @@ En observant la courbe de la densité nous remarquons qu'elle augmente en augmen
 
 \subsection{Question 2}
 
-Pour ne pas user de notre position d'observateur de l'ensemble du réseau et ses paramètres, nous nous sommes limités au possible physiquement, et avons codé un emitter décoré qui nous permet de compter les messages en transit dans le réseau à tout moment.
-Le fait qu'il n'y ait aucun message en transit nous permet de supposer que la vague actuelle est finie. La confirmation vient du fait qu'il faut aussi vérifier que ce n'est ni l'état initial ni un moment d'équilibre entre messages envoyés et reçus au milieu d'une vague de transmissions.
+Pour ne pas user de notre position d'observateur de l'ensemble du réseau et ses paramètres, nous nous sommes limités au possible physiquement, et avons codé un emitter décoré qui nous permet de compter les messages en transit dans le réseau à tout moment. Cela en utilisant une variable globale qui simulera le nombre de message en transit afin de calculer l’atteignabilité, et de lancer une vague si elle est égal à 0 (pas de message en transit).\\
+Le fait qu'il n'y ait aucun message en transit nous permet de supposer que la vague actuelle est finie. La confirmation vient du fait qu'il faut aussi vérifier que ce n'est ni l'état initial ni un moment d'équilibre entre messages envoyés et reçus au milieu d'une vague de transmissions.\\
+A chaque réception d'un message avec la possibilité de le retransmettre, on s’assurera de d’abord augmenter la variable globale du nombre de voisins avant de la décrémenter. aussi, nous avons utilisé deux booléens au niveau des couches applicatives, un pour savoir si ils ont déjà reçu un premier message et l’autre si il a été rediffusé.\\
 
 \newpage
 \subsection{Question 3}
@@ -688,6 +718,22 @@ Les résultats des test effectués avec 500 vagues et la configuration listée d
 \end{tabular}
 \end{center}
 
+\newpage
+Nous avons décidé de faire 4 classes dont deux principales.
+\begin{itemize}
+\item Une classe abstraite qui implémente le protocole Gossip et permet de rendre les classes implémentant les algorithmes de diffusion plus légers. Elle a les variables permettant au GossipController de calculer l’atteignabilité et l’économie de rediffusion.\\
+
+\item Une classe héritant de la classe abstraite qui fera office de couche applicative, recevra des messages de la couche en dessous contenant une probabilité puis diffusera ou pas selon si c'est la première réception d'un message et aussi selon la probabilité reçue. Et au passage modifiera des variables afin de permettre un calcul correct du GossipController.\\
+
+\item Une classe emitter décorateur contenant la variable global $N$ qui permettra de connaître le nombre de message en transit mais surtout si la vague de diffusion est terminée. Elle contient aussi les variables nécessaires aux calculs de probabilités selon toutes les stratégies de diffusion des questions 4, 5, 6 et 7 (Ces variables devraient être au niveau de la couche applicative mais nous avons décidé de les mettre dans le décorateur pour rendre le code plus propre).
+Elle hérite du premier emitter de l’exercice 1 afin de pouvoir diffuser et aussi pour qu’à chaque appel de la méthode emit() du décorateur on puisse incrémenter le $N$ du nombre de voisins. 
+Elle implémente aussi EDProtocol car cette classe fera aussi office de récepteur de messages des autres nœuds. Selon la stratégie de diffusion indiquée dans le fichier de configuration et le type de protocole reçu, elle calculera la probabilité et délivrera le message reçu ainsi que la probabilité à la couche applicative.\\
+
+\item Une classe GossipControler qui permettra de lancer un nombre de vague définit dans le fichier de configuration et calculer l’atteignabilité, l’économie de rediffusion, ainsi que leurs moyennes et leurs écart-type. Et bien sûr, remet les variables utilisées par l’application à l’état initial et choisit un autre nœud initiateur la diffusion avant de relancer une prochaine vague.\\
+\end{itemize}
+
+Petit détail du calcul de N au niveau de l’emitter décorateur, il incrémente du nombre de voisins à chaque émission de l’application, mais décrémente le $N$ non pas à la réception, mais uniquement lorsque l’application a terminé localement. Pour cela, l’application envoie un un message au décorateur après avoir émit (ou pas) afin de le notifier que le message a bien été traité et qu’il peut décrémenter la variable $N$.\\
+
 \subsection{Question 4}
 
 \begin{figure}[H]
@@ -776,7 +822,8 @@ Les résultats des test effectués avec 500 vagues et la configuration listée d
 
 Interprétation de la courbe :\\
 
-Le fait d'avoir deux courbes aux extrémités de de l'intervalle s'explique par un effort massif de transmissions et retransmission des messages reçus par diffusion ce qui assure une atteignabilité maximale et cela même si un bon nombre d'entre eux est inutile (du fait d'une réception ultérieure). Ce qui ne donne lieux à aucune économie de retransmission, d'où sa valeur nulle.
+Le fait d'avoir deux courbes aux extrémités de de l'intervalle s'explique par un effort massif de transmissions et retransmission des messages reçus par diffusion ce qui assure une atteignabilité maximale et cela même si un bon nombre d'entre eux est inutile (du fait d'une réception ultérieure). Ce qui ne donne lieux à aucune économie de retransmission, d'où sa valeur nulle.\\
+Aussi, le graphe est connexe (et quasi statique) et tous les noeuds à chaque première réception, rediffusent directement (une seule fois), les canaux sont fiables et les fautes ne sont pas simulées(ainsi que pour les question 5,6,7). La variation du nombre de nœuds n’a donc pas d’impact sur l’algorithme. Les nœuds sont donc forcément atteints et comme rediffusent à chaque première réception, l’économie de rediffusion est donc nulle.
 
 \newpage
 \subsection{Question 5}
@@ -974,6 +1021,7 @@ En analysant le graphique nous remarquons que plus nous augmentons la taille du 
     xlabel=Densité,
     ylabel=$Att_{500}$,
     legend style={at={(0.8,0.25)},anchor=west},
+    ymin=-0.1, ymax=1.1,
     width=\textwidth,
     height=0.6\textwidth,
     grid=both,
@@ -1056,7 +1104,8 @@ En analysant le graphique nous remarquons que plus nous augmentons la taille du 
 	axis y line*=right,
     axis x line=none,
     ylabel=$ER_{500}$, 
-    legend style={at={(0.8,0.5)},anchor=west},
+    legend style={at={(0.6,0.25)},anchor=west},
+    ymin=-0.1, ymax=1.1,
     width=\textwidth,
     height=0.6\textwidth,
     ]
@@ -1134,14 +1183,20 @@ En analysant le graphique nous remarquons que plus nous augmentons la taille du 
     \addlegendentry{$ER_{500}$, k = 15}
 \end{axis}
 \end{tikzpicture}
-	\caption[courbe5]{Courbe représentative}
+	\caption[courbe5]{Courbes représentatives de l'évolution de $Att_{500}$ et $ER_{500}$ en fonction de $k$}
 \end{figure}
 \end{center}
 
 Interprétation de la courbe :\\
 
-En analysant les courbes pour les quatre valeurs de la constante k (1, 5, 10 et 15), nous remarquons que les courbes d'atteignabilité sont toutes parallèles, décroissantes mais avec des écart-type plus petits grands avec l'augmentation de K. Par ailleurs l'économie de retransmission elle diminue avec l'augmentation de k, mais les courbes sont aussi parallèles avec des écart-type plus grands.  
+En analysant les courbes pour les quatre valeurs de la constante k (1, 5, 10 et 15), nous remarquons que les courbes d'atteignabilité sont toutes parallèles, décroissantes mais avec des écart-type plus petits grands avec l'augmentation de K. Par ailleurs l'économie de retransmission elle diminue avec l'augmentation de k, mais les courbes sont aussi parallèles avec des écart-type plus grands.\\  
 
+On a remarqué suite l’implémentation de l’algorithme précédent, qu’il y avait un très bon compromis entre l’atteignabilité et l’économie de retransmission lorsque que le probabilité de rediffusion est proche de $\frac{1}{D}$ pour les densités ayant un petit écart type. Le nombre de voisins de chaque nœuds est donc souvent très proches de la densité.\\
+
+Ainsi plus le nombre de nœuds est grand, plus la densité est grande mais sans changer la probabilité on ne fait que augmenter l’ER et diminuer l’Att, et si on augmente la probabilité alors là forcément l’Att sera meilleur mais au prix fort de l’ER.
+Notre stratégie a donc été de prendre le $\frac{k}{V}$ avec différentes valeurs de k et ainsi mettre en rapport la probabilité et approximer le $\frac{1}{D}$.\\
+
+De plus, Nous avons testé avec une probabilité de 1/Voisins en dur et nous avions obtenu en général les meilleurs compris entre l’atteignabilité et l’économie de rediffusion.
 
 
 \subsection{Question 7}
@@ -1230,8 +1285,28 @@ En analysant les courbes pour les quatre valeurs de la constante k (1, 5, 10 et 
 \end{flushright}\end{minipage}
 \end{figure}
 
+On obtient ici une très très bonne atteignabilité et une économie de retransmission acceptable. Cela quelque soit le nombre de nœuds du système, les nœuds sont quasiment tout le temps atteints en ayant toujours plus de 25\% d’économie de retransmission. Cet algorithme n’offre peut être pas autant de  garantie que celle de la question 4 et ne fait pas le meilleur compromis entre l’Att et l’ER mais assure une assez bonne stabilité dans un système dynamique représenté par les stratégies de positionnement utilisées, avec une variabilité du nombre de nœud.
+
 \subsection{Question 8}
+
+L’application de ce mécanisme sur les algorithmes 3 et 4 améliore leur atteignabilité à 100\% sans trop perdre en économie de rediffusion.
+Le système étant quasiment statique, il est donc très peu probable d’avoir de nouveaux voisins et que si on a reçu un message de tous ses voisins, il n’y pas utilité de rediffuser. Mais si on a des voisins qui ne nous ont pas envoyé de message, alors on diffuse. Ce qui explique l’atteignabilité toujours de 100\%. 
+L’économie de retransmission est forcément moins bonne car si on n'a pas transmit à la première réception, on se donne une deuxième chance de retransmettre, selon les messages reçu pendant la fenêtre de temps.
+
+\newpage
 \subsection{Question 9}
+\begin{itemize}
+\item L’algorithme 1 est le plus sûr si on veut que le message arrive à destination, cependant on inonde le réseau et donc coûte très cher en message.\\
+\item L’algorithme 2 est vraiment très instable selon la densité mais surtout de la probabilité qui n’est pas tout le temps en rapport.\\
+\item L’algorithme 3 propose une nouvelle manière de calculer la probabilité selon la densité, elle peut  donner de meilleur compromis Att/ER si on connaît d’avance la densité moyenne.\\
+\item L’algorithme 4 est beaucoup plus stable, assure une très forte atteignabilité (presque parfaite) tout en ayant une économie de retransmission plutôt satisfaisant, et ce, sans dépendre de la densité du réseau.\\
+\item Le nouveau mécanisme appliqué à l’algorithme 4 est presque inutile car le mécanisme ne fait qu’augmenter l’ateignabilité vers 100\% alors que l’algorithme 4 est déjà quasiment à 100\% tout le temps, en plus de cela, l’économie de rediffusion baisse légèrement et les messages dans le réseau sont plus lourds (du fait qu’on y mette la liste des voisins).\\
+\item Le nouveau mécanisme appliqué à l’algorithme 3 est sûrement le meilleur si on connaît la densité moyenne (afin d’avoir le bon $\frac{k}{V}/$. Il suffit juste d’avoir le $k$ de l’algorithme 3 avec la meilleure économie de retransmission et y appliquer le nouveau mécanisme, ainsi on obtient 100\% d’atteignabilité avec une économie de rediffusion légèrement moins bonne, avec cependant des message un peu lourds (à cause de la liste de voisin comme expliqué avant) mais qui n’inonde pas tout le réseau de manière exponentielle du fait de sa très bonne ER.\\
+\item Pour une densité donnée, utiliser le mécanisme de la question 8 sur l’algorithme 3 avec $k=1$ donnerait de meilleurs résultats. Nous avions expliqué précédemment lors de la réponse à la question 6 que lors de la diffusion de l’algorithme 3, que tout le monde avait $\frac{1}{D}$ de retransmettre mais qu’au fur et à mesure des retransmissions les nœuds ayant de moins en moins de chance de retransmettre et qu’au final ce n’était juste qu’un groupe de nœuds qui ont communiqué entre eux. Le nouveau mécanisme ici permet donc de propager la diffusion à l’extérieur de ce groupe tout en continuant dans la même stratégie de rediffusion selon la densité.
+\end{itemize}
+
+
+
 %-------------------------------------------------------------------------------
 % REFERENCES
 %-------------------------------------------------------------------------------

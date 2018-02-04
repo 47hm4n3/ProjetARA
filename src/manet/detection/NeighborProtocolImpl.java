@@ -20,10 +20,10 @@ public class NeighborProtocolImpl implements NeighborProtocol, EDProtocol {
 
 	private final int neighbour_pid;
 	private final int emitter_pid;
-	private final long period;
-	private final long delta;
+	private final long period; // Timer pour l'envoie du heartbeat
+	private final long delta; // Timer pour potentiellement retirer un noeud de ses voisins 
 	private List<Long> neighbours;
-	private int[] timer; //chaque noeud a pour chacun de ses voisins un timer associï¿½
+	private int[] timer; //chaque noeud a pour chacun de ses voisins un timer associé
 	private Message msgReceived;
 	private Message msgToSend;
 	
@@ -76,8 +76,9 @@ public class NeighborProtocolImpl implements NeighborProtocol, EDProtocol {
 			long idSrc = msgReceived.getIdSrc();
 			
 			switch(msgReceived.getTag()) {
-			
+				
 			case MessageType.probe:
+				// Réception d'un process event timer déclenchant l'envoie du heartbeat et on réarme un timer pour envoyer le prochain
 				idSrc = host.getID();
 				msgToSend = new Message(idSrc, -1, MessageType.heartbeat, host, neighbour_pid);
 				((EmitterImpl) host.getProtocol(emitter_pid)).emit(host, msgToSend);
@@ -85,6 +86,7 @@ public class NeighborProtocolImpl implements NeighborProtocol, EDProtocol {
 				break;
 				
 			case MessageType.timer:
+				// Réception d'un process event timer associé à un voisin, permettant de suggérer si il est toujours voisin
 				int newTimer = timer[(int)idSrc]-1; 
 				timer[(int)idSrc]=newTimer;
 				if(newTimer == 0) 
@@ -92,6 +94,7 @@ public class NeighborProtocolImpl implements NeighborProtocol, EDProtocol {
 				break;
 				
 			case MessageType.heartbeat:
+				// Réception d'un process event (heartbeat) d'un autre noeud
 				if (!neighbours.contains(idSrc)) {
 					neighbours.add(idSrc);
 				}
