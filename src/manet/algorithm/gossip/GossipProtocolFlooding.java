@@ -16,15 +16,12 @@ public class GossipProtocolFlooding extends GossipProtocolAbstract {
 		emitterdecorator_pid = Configuration.getPid(prefix + "." + PAR_EMITTERPID);
 	}
 
-	public GossipProtocolFlooding clone() {
-		return (GossipProtocolFlooding) super.clone();
-	}
 
 	@Override
 	public void initiateGossip(Node host, int id, long id_initiator) {
 		alreadySent = true;
 		firstRecv = true;
-		Message msg = new Message(host.getID(), -1, MessageType.flooding, null, emitterdecorator_pid); // tag
+		Message msg = new Message(host.getID(), -1, MessageType.flooding_algo1_2, null, emitterdecorator_pid); // tag
 																											// ==
 		((EmitterDecorator) host.getProtocol(emitterdecorator_pid)).emit(host, msg); // emit
 	}

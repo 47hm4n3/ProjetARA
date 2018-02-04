@@ -5,8 +5,8 @@ public class MessageType {
 	public static final String timer = "TIMER";
 	public static final String heartbeat = "HEARTBEAT";
 	public static final String stats = "STATS";
-	public static final String flooding = "FLOODING";
 	public static final String decrement = "DECREMENT";
+	public static final String flooding_algo1_2 = "FLOODING_ALGO1_2";
 	public static final String flooding_algo3 = "FLOODING_ALGO3";
 	public static final String flooding_algo4 = "FLOODING_ALGO4";
 	public static final String flooding_algo3_algo8 = "FLOODING_ALGO3_ALGO8";

@@ -80,7 +80,7 @@ public class EmitterDecorator extends EmitterImpl implements EDProtocol {
 				N--;
 				break;
 
-			case MessageType.flooding : 
+			case MessageType.flooding_algo1_2 : 
 				newMsg = new Message(msg.getIdSrc(), msg.getIdSrc(), msg.getTag(), proba, msg.getPid());
 				EDSimulator.add(0, newMsg, host, gossip_pid);
 				break;
