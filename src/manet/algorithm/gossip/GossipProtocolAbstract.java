@@ -4,6 +4,11 @@ import peersim.edsim.EDProtocol;
 
 public abstract class GossipProtocolAbstract implements GossipProtocol, EDProtocol{
 	
+	/*
+	 *  Class dont va hériter les protocoles de diffusion 
+	 * afin de permettre au GossipController de calculer des stats
+	 */
+	
 	protected static final String PAR_EMITTERPID = "emitterdecoratorprotocol";
 	
 	protected boolean alreadySent = false;

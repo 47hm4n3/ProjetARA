@@ -11,7 +11,7 @@ import utils.MessageType;
 
 public class GossipProtocolImpl extends GossipProtocolAbstract{
 	
-	protected static final String PAR_GOSSIP_STRAT = "gossipstrat";
+	protected static final String PAR_GOSSIP_STRAT = "strat";
 	
 	
 	private final int emitterdecorator_pid;
@@ -28,9 +28,9 @@ public class GossipProtocolImpl extends GossipProtocolAbstract{
 		firstRecv = true;
 		Message msg = null;
 		switch(gossipstrat) {
-		case 1: msg = new Message(host.getID(), -1, MessageType.flooding_algo1_2, null, emitterdecorator_pid);	
+		case 1: msg = new Message(host.getID(), -1, MessageType.flooding_algo1, null, emitterdecorator_pid);	
 			break;
-		case 2 : msg = new Message(host.getID(), -1, MessageType.flooding_algo1_2, null, emitterdecorator_pid);	
+		case 2 : msg = new Message(host.getID(), -1, MessageType.flooding_algo2, null, emitterdecorator_pid);	
 			break;
 		case 3 : msg = new Message(host.getID(), -1, MessageType.flooding_algo3, null, emitterdecorator_pid);	
 			break;
